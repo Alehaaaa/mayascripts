@@ -1,0 +1,16 @@
+python("\n\
+#Pipeline_config.mel\n\
+import json, os, maya.cmds as cmds\n\
+\n\
+f = os.path.join(os.environ['MAYA_APP_DIR'], cmds.about(v=True), 'prefs', 'pipeline2_settings.json')\n\
+with open(f, 'r') as (jsonFile):\n\
+    data = json.load(jsonFile)\n\
+data['check_for_updates'] = 1\n\
+data['playblast_compression'] = 'H.264'\n\
+data['playblast_format'] = 'qt'\n\
+data['playblast_hud'] = 1\n\
+data['playblast_offscreen'] = 0\n\
+data['playblast_scale'] = 100\n\
+with open(f, 'w') as (jsonFile):\n\
+    json.dump(data, jsonFile, indent=4)\n\
+");
