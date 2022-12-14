@@ -45,4 +45,3 @@ for v in os.listdir(ScriptsPath):\n\
         shutil.rmtree(ScriptsPath+os.sep+v)\n\
 \n\
 cmds.quit()\n\
-");

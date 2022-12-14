@@ -28,7 +28,7 @@ if cmds.about(v=True) <= '2020':
             "ignoreReferenceEdits": 0} #Record reference edits (so the scipt works with references)
     
         scriptNodes = cmds.ls(typ="script") #check for any scriptnodes are in scene
-        scriptNodes = [s for s in scriptNodes if not '_gene' in s]
+        scriptNodes = [s for s in scriptNodes if '_gene' in s]
         scriptNodesBefore = scriptNodes
         cmds.delete(scriptNodes) #delete them! theyre not safe for work
         scriptNodes = cmds.ls(typ="script") #check again
