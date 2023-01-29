@@ -1,8 +1,11 @@
 {
     "cams":{
-        "version": "0.0.2", 
+        "version": "0.0.3", 
         "changelog": 
         [
+            "=== 0.0.3 ===",
+            "- Working on Install Update",
+            "",
             "=== 0.0.2 ===",
             "- Added a Check for Updates in About menu.", 
             "- Corrected message in 'Buy me a coffee!' window.",
