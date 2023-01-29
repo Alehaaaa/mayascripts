@@ -49,7 +49,7 @@ class UI:
         cmds.menu( label='Tools')
         cmds.menuItem( label='Reload', command = self.reload )
         cmds.menuItem( divider=True )
-        cmds.menuItem( label='MultiCams', command = "multicams()" )
+        cmds.menuItem( label='MultiCams', command = "cams.multicams()" )
         cmds.menu( label='About', helpMenu=True )
         cmds.menuItem( label='Check for updates', command = self.check_for_updates )
         cmds.menuItem( divider=True )
@@ -161,15 +161,18 @@ class UI:
             )
             if update_available == 'Install':
                 self.install()
+        else:
+            om.MGlobal.displayWarning("All up-to-date.")
 
     def install(self, *args):
         import os, urllib2
         import maya.OpenMaya as om
         
-        url = 'https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/{0}.json'.format(UI.TITLE)
+        url = 'https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/{0}.py'.format(UI.TITLE.lower())
 
         try:
             response = urllib2.urlopen(url)
+            
         except:
             om.MGlobal.displayWarning(UI.NO_INTERNET)
             return
@@ -178,6 +181,9 @@ class UI:
         if not content:
             om.MGlobal.displayWarning(UI.NO_INTERNET)
             return
+
+        om.MGlobal.displayWarning("Still working on this feature!")
+        return
 
         scriptPath = os.environ['MAYA_SCRIPT_PATH']
         path = []
@@ -328,5 +334,3 @@ class multicams:
             
         cmds.connectAttr('%s.output1D' % (plusMinusAverage), '%s.fl' % (cmds.listRelatives(new_cam, shapes=True)[0]), f = True)
         UI().reload()
-
-UI()
