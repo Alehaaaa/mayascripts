@@ -79,6 +79,9 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.settings_window = None
         self.options = None
 
+        if not self.skip_update:
+            self.check_for_updates(warning=False)
+
         # self.script_job_id = cmds.scriptJob(event=["Undo", self.reload])
 
     def create_layouts(self):
@@ -417,7 +420,8 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                   far=False,
                   overscan=False,
                   mask_op=False,
-                  mask_color=False):
+                  mask_color=False,
+                  skip_update=False):
         self.transformNode = "camsData"
 
         if not cmds.objExists(self.transformNode):
@@ -434,7 +438,8 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                 'far_clip': (10000.0, True),
                 'display_resolution': 1,
                 'mask_opacity': (1.0, True),
-                'mask_color': ([0.0, 0.0, 0.0], True)
+                'mask_color': ([0.0, 0.0, 0.0], True),
+                'skip_update': False
             }
             cmds.setAttr(self.transformNode + '.data',
                          str(default_settings),
@@ -456,6 +461,8 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             nodeData['mask_opacity'] = mask_op
         if mask_color:
             nodeData['mask_color'] = mask_color
+        if skip_update:
+            nodeData['skip_update'] = skip_update
 
         self.default_cam = nodeData['camera']
         self.default_overscan = nodeData['overscan']
@@ -464,6 +471,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.default_resolution = nodeData['display_resolution']
         self.default_gate_mask_opacity = nodeData['mask_opacity']
         self.default_gate_mask_color = nodeData['mask_color']
+        self.skip_update = nodeData['skip_update']
 
         cmds.setAttr(self.transformNode + '.data',
                      str(nodeData),
@@ -615,18 +623,19 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         except:
             pass
         if reset:
-            self.data_node()
+            self.data_node(skip_update=self.skip_update)
 
     # Check for Updates
-    def check_for_updates(self, *args):
+    def check_for_updates(self, warning=True, *args):
         import json, urllib2
 
         url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/version.json"
 
         try:
-            response = urllib2.urlopen(url)
+            response = urllib2.urlopen(url, timeout=1)
         except:
-            om.MGlobal.displayWarning(UI.NO_INTERNET)
+            if warning:
+                om.MGlobal.displayWarning(UI.NO_INTERNET)
             return
         content = response.read()
 
@@ -638,21 +647,24 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             changelog = str("\n".join(script["changelog"]))
 
         if version > UI.VERSION:
-            self.update_available = cmds.confirmDialog(
+            update_available = cmds.confirmDialog(
                 title="New update for {0}!".format(UI.TITLE),
                 message=
                 "Version {0} available, you are using {1}\n\nChangelog:\n{2}".
                 format(version, UI.VERSION, changelog),
                 messageAlign="center",
-                button=["Install", "Close"],
+                button=["Install", "Skip", "Close"],
                 defaultButton="Install",
                 cancelButton="Close",
                 dismissString="Close",
             )
-            if self.update_available == "Install":
+            if update_available == "Install":
                 self.install()
+            if update_available == "Skip":
+                self.data_node(skip_update=1)
         else:
-            om.MGlobal.displayWarning("All up-to-date.")
+            if warning:
+                om.MGlobal.displayWarning("All up-to-date.")
 
     def install(self, *args):
         import os, urllib2
@@ -663,7 +675,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             .format(UI.SCRIPT.lower()))
 
         try:
-            response = urllib2.urlopen(url)
+            response = urllib2.urlopen(url, timeout=1)
         except:
             om.MGlobal.displayWarning(UI.NO_INTERNET)
             return
