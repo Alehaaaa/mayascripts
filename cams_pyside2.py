@@ -32,8 +32,9 @@ def maya_main_window():
 
 class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
+    SCRIPT = "cams_pyside2"
     TITLE = "Cams"
-    VERSION = "0.0.4"
+    VERSION = "0.0.5"
     """
     Messages:
     """
@@ -631,7 +632,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
         if content:
             data = json.loads(content)
-            script = data[UI.TITLE.lower()]
+            script = data[UI.SCRIPT.lower()]
 
             version = str(script["version"])
             changelog = str("\n".join(script["changelog"]))
@@ -659,7 +660,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
         url = (
             "https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/{0}.py"
-            .format(UI.TITLE.lower()))
+            .format(UI.SCRIPT.lower()))
 
         try:
             response = urllib2.urlopen(url)
@@ -672,24 +673,26 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             om.MGlobal.displayWarning(UI.NO_INTERNET)
             return
 
-        om.MGlobal.displayWarning(UI.WORKING_ON_IT)
-        return
-
         scriptPath = os.environ["MAYA_SCRIPT_PATH"]
         path = []
 
-        for i in scriptPath.split(";"):
-            if os.path.isfile("{0}/{1}.py".format(i, UI.TITLE.lower())):
-                path.append(i)
+        for i in scriptPath.split(os.pathsep):
+            file_path = os.path.join(i, UI.SCRIPT.lower() + '.py')
+            if os.path.isfile(file_path):
+                path.append(file_path)
 
         for p in path:
             try:
                 with open(p, "w") as f:
                     f.write(content)
+
             except:
                 om.MGlobal.displayWarning(UI.NO_WRITE_PERMISSION)
 
-        om.MGlobal.displayWarning("Re-open the script {0}.".format(UI.TITLE))
+        # Close and reopen the window
+        self.deleteLater()
+        cmds.evalDeferred("import {};reload({});{}.UI.show_dialog();".format(
+            UI.SCRIPT, UI.SCRIPT, UI.SCRIPT))
 
     def coffee(self):
 
