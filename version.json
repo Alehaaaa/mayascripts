@@ -1,8 +1,7 @@
 {
-    "cams":{
-        "version": "0.0.4", 
-        "changelog": 
-        [
+    "cams": {
+        "version": "0.0.4",
+        "changelog": [
             "=== 0.0.4 ===",
             "- Installation of Updates!",
             "- Fixed issues.",
@@ -12,10 +11,21 @@
             "- Edited code to run on top.",
             "",
             "=== 0.0.2 ===",
-            "- Added a Check for Updates in About menu.", 
+            "- Added a Check for Updates in About menu.",
             "- Corrected message in 'Buy me a coffee!' window.",
             "",
             "=== 0.0.1 ===",
+            "- Initial Release"
+        ]
+    },
+    "cams_pyside2": {
+        "version": "0.0.4",
+        "changelog": [
+            "=== 0.0.5 ===",
+            "- Installation of Updates!",
+            "- Fixed issues.",
+            "",
+            "=== 0.0.4 ===",
             "- Initial Release"
         ]
     }
