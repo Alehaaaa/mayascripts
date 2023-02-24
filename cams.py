@@ -183,7 +183,7 @@ class UI:
         import json, urllib2
         import maya.OpenMaya as om
 
-        url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/be451e021244bf997cd894a530a4534d324ff910/version.json"
+        url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/version.json"
 
         try:
             response = urllib2.urlopen(url)
