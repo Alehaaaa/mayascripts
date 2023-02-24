@@ -1,11 +1,15 @@
 {
     "cams":{
-        "version": "0.0.3", 
+        "version": "0.0.4", 
         "changelog": 
         [
+            "=== 0.0.4 ===",
+            "- Fixed issues.",
+            "- Added some functionality.",
+            "",
             "=== 0.0.3 ===",
             "- Working on Install Update.",
-            "- Edited code to run in top comment.",
+            "- Edited code to run on top.",
             "",
             "=== 0.0.2 ===",
             "- Added a Check for Updates in About menu.", 
