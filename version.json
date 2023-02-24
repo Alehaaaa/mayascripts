@@ -19,7 +19,7 @@
         ]
     },
     "cams_pyside2": {
-        "version": "0.0.4",
+        "version": "0.0.5",
         "changelog": [
             "=== 0.0.5 ===",
             "- Installation of Updates!",
