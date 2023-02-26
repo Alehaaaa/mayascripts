@@ -196,8 +196,8 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             lambda cam=cam: Options.show_dialog(cam))
 
         menu.addSeparator()
-        options_action = menu.addAction("Apply default settings")
-        options_action.triggered.connect(
+        apply_default_action = menu.addAction("Apply default settings")
+        apply_default_action.triggered.connect(
             lambda cam=cam: self.apply_default_settings(cam))
 
         if cam != self.default_cam[0]:
@@ -436,7 +436,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                 'overscan': (1.0, True),
                 'near_clip': (1.0, True),
                 'far_clip': (10000.0, True),
-                'display_resolution': 1,
+                'display_resolution': (1, True),
                 'mask_opacity': (1.0, True),
                 'mask_color': ([0.0, 0.0, 0.0], True),
                 'skip_update': False
@@ -527,6 +527,8 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     def resolution_cam(self, cam):
         cmds.setAttr("{}.displayResolution".format(cam),
+                     self.resolution_checkbox.isChecked())
+        cmds.setAttr("{}.displayGateMask".format(cam),
                      self.resolution_checkbox.isChecked())
 
     def delete_cam(self, cam):
