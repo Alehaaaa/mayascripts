@@ -23,6 +23,7 @@ from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 import maya.OpenMayaUI as omui
 import maya.OpenMaya as om
 import maya.cmds as cmds
+import maya.mel as mel
 
 
 def maya_main_window():
@@ -504,13 +505,13 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             self.reload()
 
     def tear_off_cam(self, cam):
-        tear_off_cam = cmds.window(title="{} View".format(cam.title()), h=540, w=720)
-        tear_off_layout = cmds.paneLayout(parent=tear_off_cam)
+        def getPanelFromCamera(cameraName):
+            for panelName in cmds.getPanel( type="modelPanel" ):
+                if cmds.modelPanel( panelName,query=True, camera=True) == cameraName:
+                    return panelName
 
-        tear_off_panel = cmds.modelPanel(parent=tear_off_layout, camera=cam)
-        cmds.setFocus(tear_off_panel)
+        mel.eval('tearOffCopyItemCmd modelPanel ' + getPanelFromCamera('persp'))
 
-        cmds.showWindow(tear_off_cam)
 
 
     def apply_default_settings(self, cam):
