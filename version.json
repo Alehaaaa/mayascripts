@@ -21,6 +21,9 @@
     "cams_pyside2": {
         "version": "0.0.5",
         "changelog": [
+            "=== 0.0.6 ===",
+            "- Added Tear Off Camera.",
+            "",
             "=== 0.0.5 ===",
             "- Installation of Updates!",
             "- Fixed issues.",

@@ -34,7 +34,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     SCRIPT = "cams_pyside2"
     TITLE = "Cams"
-    VERSION = "0.0.5"
+    VERSION = "0.0.6"
     """
     Messages:
     """
@@ -195,6 +195,10 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         options_action.triggered.connect(
             lambda cam=cam: Options.show_dialog(cam))
 
+        menu.addSeparator()
+        tear_off_copy = menu.addAction("Tear Off Copy")
+        tear_off_copy.triggered.connect(
+            lambda cam=cam: self.tear_off_cam(cam))
         menu.addSeparator()
         apply_default_action = menu.addAction("Apply default settings")
         apply_default_action.triggered.connect(
@@ -498,6 +502,16 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             input = self.rename_window.textValue()
             cmds.rename(cam, input)
             self.reload()
+
+    def tear_off_cam(self, cam):
+        tear_off_cam = cmds.window(title="{} View".format(cam.title()), h=540, w=720)
+        tear_off_layout = cmds.paneLayout(parent=tear_off_cam)
+
+        tear_off_panel = cmds.modelPanel(parent=tear_off_layout, camera=cam)
+        cmds.setFocus(tear_off_panel)
+
+        cmds.showWindow(tear_off_cam)
+
 
     def apply_default_settings(self, cam):
         parameters = {
