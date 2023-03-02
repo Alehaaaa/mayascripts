@@ -510,7 +510,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                 if cmds.modelPanel( panelName,query=True, camera=True) == cameraName:
                     return panelName
 
-        mel.eval('tearOffCopyItemCmd modelPanel ' + getPanelFromCamera('persp'))
+        mel.eval('tearOffCopyItemCmd modelPanel ' + getPanelFromCamera(cam))
 
 
 
