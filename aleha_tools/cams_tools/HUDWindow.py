@@ -458,13 +458,3 @@ class HUDWindow(QtWidgets.QMainWindow):
             self.preset_title.setEnabled(False)
 
         self.displayed_preset = preset
-
-
-try:
-    my_window.close()
-    my_window.deleteLater()
-except:
-    pass
-
-my_window = HUDWindow()
-my_window.show()

@@ -662,11 +662,11 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
     # Open Tools
     def run_tools(self, tool, py=True):
         if not py:
-            not_py = "reload(tool);tool.{}();".format(tool)
+            extra = "reload(tool);tool.{}();".format(tool)
         else:
-            not_py = "tool.{}.show_dialog()".format(tool)
+            extra = "tool.{}.show_dialog()".format(tool)
 
-        exec("import aleha_tools.cams_tools.{} as tool;{}".format(tool, not_py))
+        exec("import aleha_tools.cams_tools.{} as tool;{}".format(tool, extra))
 
     """
     Extra Functionality
@@ -708,27 +708,10 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                 dismissString="Close",
             )
             if update_available == "Install":
-                mayaPath = os.environ["MAYA_APP_DIR"]
-                scriptPath = (
-                    mayaPath + os.sep + cmds.about(version=True) + os.sep + "scripts"
-                )
-                toolsFolder = scriptPath + os.sep + "aleha_tools" + os.sep
 
-                if os.path.isfile(toolsFolder + "updater.py"):
-                    import aleha_tools.updater as updater
+                import aleha_tools.updater as updater
 
-                    updater.Updater().install(script_name)
-                else:
-                    try:
-                        repo_url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/aleha_tools/updater.py"
-                        exec(
-                            "import requests;exec(requests.get('{}').text);Updater().install('{}');".format(
-                                repo_url, script_name
-                            )
-                        )
-                    except:
-                        cmds.warning("No internet connection!")
-                        return
+                updater.Updater().install(script_name)
 
                 self.deleteLater()
                 cmds.evalDeferred(
