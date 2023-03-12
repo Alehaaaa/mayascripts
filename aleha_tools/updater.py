@@ -5,7 +5,7 @@ import shutil, os, requests, urllib2, zipfile
 
 class Updater:
     def get_latest_release(self):
-        """repo_url = "https://api.github.com/repos/Alehaaaa/mayascripts/releases"
+        repo_url = "https://api.github.com/repos/Alehaaaa/mayascripts/releases"
 
         response = requests.get(repo_url)
 
@@ -15,8 +15,7 @@ class Updater:
             if latest_release:
                 release = "https://codeload.github.com/Alehaaaa/mayascripts/legacy.zip/refs/tags/{}".format(
                     latest_release
-                )"""
-        release = "https://github.com/Alehaaaa/mayascripts/archive/refs/heads/dev.zip"
+                )
         return release
 
     def formatPath(self, path):
@@ -88,3 +87,51 @@ class Updater:
         zfobj.close()
         if os.path.isfile(tmpZipFile):
             os.remove(tmpZipFile)
+
+        self.add_shelf_button(tool)
+
+    def add_shelf_button(self, tool):
+        import maya.mel as mel
+
+        currentShelf = cmds.tabLayout(mel.eval("$nul=$gShelfTopLevel"), q=1, st=1)
+
+        def find():
+            buttons = cmds.shelfLayout(currentShelf, q=True, ca=True)
+            if buttons is None:
+                return False
+            else:
+                for b in buttons:
+                    if (
+                        cmds.shelfButton(b, exists=True)
+                        and cmds.shelfButton(b, q=True, l=True) == tool
+                    ):
+                        return True
+            return False
+
+        if not find():
+            confirm = cmds.confirmDialog(
+                title="No shelf button found",
+                message="Do you want to add a shelf button for {} to the current shelf?".format(
+                    tool.title()
+                ),
+                button=["Yes", "No"],
+                defaultButton="Yes",
+                cancelButton="No",
+                dismissString="No",
+            )
+            if confirm == "Yes":
+                cmds.shelfButton(
+                    parent=currentShelf,
+                    i=os.path.join(
+                        os.environ["MAYA_APP_DIR"],
+                        cmds.about(version=True),
+                        "scripts",
+                        "aleha_tools",
+                        "{}.svg".format(tool),
+                    ),
+                    label=tool,
+                    c="import aleha_tools.{} as {};{}.UI.show_dialog()".format(
+                        tool, tool, tool
+                    ),
+                    annotation="{} by Aleha".format(tool.title()),
+                )
