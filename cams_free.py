@@ -136,7 +136,10 @@ class UI:
             cmds.separator(w=self.__margin__ / 5, style="none")
             cmds.setParent("..")
 
-        cmds.window(UI.TITLE, edit=True, width=100, rtf=True)
+        try:
+            cmds.window(UI.TITLE, edit=True, width=100, rtf=True)
+        except:
+            pass
 
     def delete_cam(self, cam):
         result = cmds.confirmDialog(
@@ -184,7 +187,8 @@ class UI:
         import json, urllib2
         import maya.OpenMaya as om
 
-        self.script_filename = "cams_free"
+        script_name = "cams_free"
+
         url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/version.json"
 
         try:
@@ -196,7 +200,7 @@ class UI:
 
         if content:
             data = json.loads(content)
-            script = data[self.script_filename]
+            script = data[script_name]
 
             version = str(script["version"])
             changelog = str("\n".join(script["changelog"]))
@@ -224,8 +228,12 @@ class UI:
         import os, urllib2
         import maya.OpenMaya as om
 
-        url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/aleha_tools/{0}.py".format(
-            self.script_filename
+        script_name = "cams_free"
+
+        url = (
+            "https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/{0}.py".format(
+                script_name
+            )
         )
 
         try:
@@ -243,8 +251,8 @@ class UI:
         path = []
 
         for i in scriptPath.split(os.pathsep):
-            if os.path.isfile(os.path.join(i, self.script_filename + ".py")):
-                path.append(os.path.join(i, self.script_filename + ".py"))
+            if os.path.isfile(os.path.join(i, script_name + ".py")):
+                path.append(os.path.join(i, script_name + ".py"))
 
         for p in path:
             try:
@@ -255,7 +263,7 @@ class UI:
                 om.MGlobal.displayWarning(UI.NO_WRITE_PERMISSION)
 
         # Close and reopen the window
-        cmds.evalDeferred("reload(cams);cams.UI();")
+        cmds.evalDeferred("reload(cams_free);cams_free.UI();")
         """cmds.deleteUI(self.window, window=True)"""
 
     def coffee(self):
