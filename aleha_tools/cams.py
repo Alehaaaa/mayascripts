@@ -1,20 +1,18 @@
 """
 
 Put this file in your scripts directory:
-"%USERPROFILE%\Documents\maya\####\scripts"
-or
-"%USERPROFILE%\Documents\maya\scripts"
+"%USERPROFILE%\Documents\maya\## VERSION ##\scripts"
 
 
 Run with:
 
-import cams_pyside2
-cams_pyside2.UI.show_dialog()
+import aleha_tools.cams as cams
+cams.UI.show_dialog()
 
 
 """
 
-import random
+import random, os
 
 from PySide2 import QtWidgets, QtGui, QtCore
 from shiboken2 import wrapInstance
@@ -33,9 +31,8 @@ def maya_main_window():
 
 class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
-    SCRIPT = "cams_pyside2"
     TITLE = "Cams"
-    VERSION = "0.0.6"
+    VERSION = "0.0.7"
     """
     Messages:
     """
@@ -679,6 +676,8 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
     def check_for_updates(self, warning=True, *args):
         import json, urllib2
 
+        script_name = UI.TITLE.lower()
+
         url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/version.json"
 
         try:
@@ -691,7 +690,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
         if content:
             data = json.loads(content)
-            script = data[UI.SCRIPT.lower()]
+            script = data[script_name]
 
             version = str(script["version"])
             changelog = str("\n".join(script["changelog"]))
@@ -709,57 +708,40 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                 dismissString="Close",
             )
             if update_available == "Install":
-                self.install()
+                mayaPath = os.environ["MAYA_APP_DIR"]
+                scriptPath = (
+                    mayaPath + os.sep + cmds.about(version=True) + os.sep + "scripts"
+                )
+                toolsFolder = scriptPath + os.sep + "aleha_tools" + os.sep
+
+                if os.path.isfile(toolsFolder + "updater.py"):
+                    import aleha_tools.updater as updater
+
+                    updater.install(script_name)
+                else:
+                    try:
+                        repo_url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/dev/aleha_tools/updater.py"
+                        exec(
+                            "import requests;requests.get('{}').text;install('{}')".format(
+                                repo_url, script_name
+                            )
+                        )
+                    except:
+                        cmds.warning("No internet connection!")
+                        return
+
+                self.deleteLater()
+                cmds.evalDeferred(
+                    "import aleha_tools.{} as cams;reload(cams);cams.UI.show_dialog();".format(
+                        script_name, script_name, script_name
+                    )
+                )
+
             if update_available == "Skip":
                 self.data_node(skip_update=1)
         else:
             if warning:
                 om.MGlobal.displayWarning("All up-to-date.")
-
-    def install(self, *args):
-        import os, urllib2
-        import maya.OpenMaya as om
-
-        url = (
-            "https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/{0}.py".format(
-                UI.SCRIPT.lower()
-            )
-        )
-
-        try:
-            response = urllib2.urlopen(url, timeout=1)
-        except:
-            om.MGlobal.displayWarning(UI.NO_INTERNET)
-            return
-        content = response.read()
-
-        if not content:
-            om.MGlobal.displayWarning(UI.NO_INTERNET)
-            return
-
-        scriptPath = os.environ["MAYA_SCRIPT_PATH"]
-        path = []
-
-        for i in scriptPath.split(os.pathsep):
-            file_path = os.path.join(i, UI.SCRIPT.lower() + ".py")
-            if os.path.isfile(file_path):
-                path.append(file_path)
-
-        for p in path:
-            try:
-                with open(p, "w") as f:
-                    f.write(content)
-
-            except:
-                om.MGlobal.displayWarning(UI.NO_WRITE_PERMISSION)
-
-        # Close and reopen the window
-        self.deleteLater()
-        cmds.evalDeferred(
-            "import {};reload({});{}.UI.show_dialog();".format(
-                UI.SCRIPT, UI.SCRIPT, UI.SCRIPT
-            )
-        )
 
     def coffee(self):
 
