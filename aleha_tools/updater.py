@@ -1,9 +1,7 @@
-import maya.cmds as cmds
-import shutil, os, requests, urllib2, zipfile
-
-
 class Updater:
     def get_latest_release(self):
+        import requests
+
         repo_url = "https://api.github.com/repos/Alehaaaa/mayascripts/releases"
 
         response = requests.get(repo_url)
@@ -18,11 +16,16 @@ class Updater:
         return release
 
     def formatPath(self, path):
+        import os
+
         path = path.replace("/", os.sep)
         path = path.replace("\\", os.sep)
         return path
 
     def download(self, downloadUrl, saveFile):
+        import maya.cmds as cmds
+        import urllib2
+
         try:
             response = urllib2.urlopen(downloadUrl, timeout=60)
         except:
@@ -39,6 +42,9 @@ class Updater:
         return output
 
     def install(self, tool):
+        import maya.cmds as cmds
+        import os, shutil, zipfile
+
         mayaPath = os.environ["MAYA_APP_DIR"]
         scriptPath = mayaPath + os.sep + cmds.about(version=True) + os.sep + "scripts"
         toolsFolder = scriptPath + os.sep + "aleha_tools" + os.sep
@@ -90,7 +96,9 @@ class Updater:
         self.add_shelf_button(tool)
 
     def add_shelf_button(self, tool):
+        import maya.cmds as cmds
         import maya.mel as mel
+        import os
 
         currentShelf = cmds.tabLayout(mel.eval("$nul=$gShelfTopLevel"), q=1, st=1)
 
