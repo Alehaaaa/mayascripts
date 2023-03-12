@@ -36,10 +36,13 @@
         ]
     },
     "cams": {
-        "version": "0.0.7",
+        "version": "0.0.8",
         "changelog": [
-            "=== 0.0.7 ===",
+            "=== 0.0.8 ===",
             "- Added HUD Editor.",
+            "- Better organization.",
+            "",
+            "=== 0.0.7 ===",
             "- Better organization.",
             "",
             "=== 0.0.6 ===",
