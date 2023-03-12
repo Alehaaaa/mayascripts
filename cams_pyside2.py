@@ -716,16 +716,18 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                             repo_url, script_name
                         )
                     )
+                    self.deleteLater()
+                    cmds.evalDeferred(
+                        "import aleha_tools.{} as cams;reload(cams);cams.UI.show_dialog();".format(
+                            script_name, script_name, script_name
+                        )
+                    )
                 except:
                     cmds.warning("No internet connection!")
-                    return
-
-                self.deleteLater()
-                cmds.evalDeferred(
-                    "import aleha_tools.{} as cams;reload(cams);cams.UI.show_dialog();".format(
-                        script_name, script_name, script_name
+                    cmds.evalDeferred(
+                        "import cams_pyside2 as cams;cams.UI.show_dialog();"
                     )
-                )
+                    return
 
             if update_available == "Skip":
                 self.data_node(skip_update=1)
