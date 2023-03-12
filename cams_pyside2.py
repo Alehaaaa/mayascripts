@@ -718,7 +718,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                     )
                 except:
                     cmds.warning("No internet connection!")
-                    return"""
+                    return
 
                 self.deleteLater()
                 cmds.evalDeferred(
