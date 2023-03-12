@@ -19,8 +19,29 @@
         ]
     },
     "cams_pyside2": {
-        "version": "0.0.6",
+        "version": "0.0.7",
         "changelog": [
+            "=== 0.0.7 ===",
+            "- Update to get future updates.",
+            "",
+            "=== 0.0.6 ===",
+            "- Added Tear Off Camera.",
+            "",
+            "=== 0.0.5 ===",
+            "- Installation of Updates!",
+            "- Fixed issues.",
+            "",
+            "=== 0.0.4 ===",
+            "- Initial Release"
+        ]
+    },
+    "cams": {
+        "version": "0.0.7",
+        "changelog": [
+            "=== 0.0.7 ===",
+            "- Added HUD Editor.",
+            "- Better organization.",
+            "",
             "=== 0.0.6 ===",
             "- Added Tear Off Camera.",
             "",
