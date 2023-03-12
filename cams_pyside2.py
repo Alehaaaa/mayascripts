@@ -6,7 +6,7 @@ Put this file in your scripts directory:
 
 Run with:
 
-import aleha_tools.cams as cams
+import cams_pyside2 as cams
 cams.UI.show_dialog()
 
 
@@ -708,27 +708,16 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                 dismissString="Close",
             )
             if update_available == "Install":
-                mayaPath = os.environ["MAYA_APP_DIR"]
-                scriptPath = (
-                    mayaPath + os.sep + cmds.about(version=True) + os.sep + "scripts"
-                )
-                toolsFolder = scriptPath + os.sep + "aleha_tools" + os.sep
-
-                if os.path.isfile(toolsFolder + "updater.py"):
-                    import aleha_tools.updater as updater
-
-                    updater.install(script_name)
-                else:
-                    try:
-                        repo_url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/dev/aleha_tools/updater.py"
-                        exec(
-                            "import requests;requests.get('{}').text;install('{}')".format(
-                                repo_url, script_name
-                            )
+                try:
+                    repo_url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/dev/aleha_tools/updater.py"
+                    exec(
+                        "import requests;requests.get('{}').text;install('{}')".format(
+                            repo_url, script_name
                         )
-                    except:
-                        cmds.warning("No internet connection!")
-                        return
+                    )
+                except:
+                    cmds.warning("No internet connection!")
+                    return
 
                 self.deleteLater()
                 cmds.evalDeferred(
