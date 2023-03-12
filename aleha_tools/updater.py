@@ -4,7 +4,7 @@ import shutil, os, requests, urllib2, zipfile
 
 
 class Updater:
-    def get_latest_release():
+    def get_latest_release(self):
         """repo_url = "https://api.github.com/repos/Alehaaaa/mayascripts/releases"
 
         response = requests.get(repo_url)
