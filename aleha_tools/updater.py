@@ -88,7 +88,3 @@ def install(tool):
     zfobj.close()
     if os.path.isfile(tmpZipFile):
         os.remove(tmpZipFile)
-
-    """
-    from aTools import setup; reload(setup); setup.install([offlineFilePath, False]) 
-    cmds.evalDeferred("from aTools.animTools.animBar import animBarUI; reload(animBarUI);")"""
