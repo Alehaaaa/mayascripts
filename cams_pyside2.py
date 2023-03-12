@@ -32,7 +32,7 @@ def maya_main_window():
 class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     TITLE = "Cams"
-    VERSION = "0.0.6"
+    VERSION = "0.0.7"
     """
     Messages:
     """
