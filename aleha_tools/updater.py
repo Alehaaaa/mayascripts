@@ -90,5 +90,3 @@ def install(tool):
     zfobj.close()
     if os.path.isfile(tmpZipFile):
         os.remove(tmpZipFile)
-
-install('cams')
