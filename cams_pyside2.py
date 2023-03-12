@@ -709,15 +709,16 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             )
             if update_available == "Install":
                 try:
-                    repo_url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/dev/aleha_tools/updater.py"
+                    repo_url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/aleha_tools/updater.py"
+
                     exec(
-                        "import requests;exec(requests.get('{}').text);install('{}');".format(
+                        "import requests;exec(requests.get('{}').text);Updater().install('{}');".format(
                             repo_url, script_name
                         )
                     )
                 except:
                     cmds.warning("No internet connection!")
-                    return
+                    return"""
 
                 self.deleteLater()
                 cmds.evalDeferred(

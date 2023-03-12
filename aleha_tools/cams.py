@@ -717,12 +717,12 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                 if os.path.isfile(toolsFolder + "updater.py"):
                     import aleha_tools.updater as updater
 
-                    updater.install(script_name)
+                    updater.Updater().install(script_name)
                 else:
                     try:
-                        repo_url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/dev/aleha_tools/updater.py"
+                        repo_url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/aleha_tools/updater.py"
                         exec(
-                            "import requests;exec(requests.get('{}').text);install('{}');".format(
+                            "import requests;exec(requests.get('{}').text);Updater().install('{}');".format(
                                 repo_url, script_name
                             )
                         )
