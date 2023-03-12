@@ -67,10 +67,11 @@ def install(tool):
     root = zfobj.namelist()[0]
 
     zfobj_list = [f for f in zfobj.namelist() if "aleha_tools" in f]
+    updater_script = [f for f in zfobj.namelist() if "updater" in f]
     install_tool_files = [f for f in zfobj_list if (tool in f) or ("__init__" in f)]
+    files = install_tool_files + updater_script
 
-    for name in install_tool_files:
-        print(name)
+    for name in files:
         uncompressed = zfobj.read(name)
 
         filename = formatPath("%s%s%s" % (scriptPath, os.sep, name.replace(root, "")))
