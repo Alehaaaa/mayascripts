@@ -4,7 +4,7 @@ import shutil, os, requests, urllib2, zipfile
 
 
 def get_latest_release():
-    repo_url = "https://api.github.com/repos/Alehaaaa/mayascripts/releases"
+    """repo_url = "https://api.github.com/repos/Alehaaaa/mayascripts/releases"
 
     response = requests.get(repo_url)
 
@@ -14,8 +14,9 @@ def get_latest_release():
         if latest_release:
             release = "https://codeload.github.com/Alehaaaa/mayascripts/legacy.zip/refs/tags/{}".format(
                 latest_release
-            )
-            return release
+            )"""
+    release = "https://github.com/Alehaaaa/mayascripts/archive/refs/heads/dev.zip"
+    return release
 
 
 def formatPath(path):
@@ -89,3 +90,5 @@ def install(tool):
     zfobj.close()
     if os.path.isfile(tmpZipFile):
         os.remove(tmpZipFile)
+
+install('cams')
