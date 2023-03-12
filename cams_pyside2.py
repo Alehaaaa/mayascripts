@@ -711,7 +711,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                 try:
                     repo_url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/dev/aleha_tools/updater.py"
                     exec(
-                        "import requests;requests.get('{}').text;install('{}')".format(
+                        "import requests;exec(requests.get('{}').text);install('{}');".format(
                             repo_url, script_name
                         )
                     )
