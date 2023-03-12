@@ -1,4 +1,3 @@
-# Update Aleha Tools
 import maya.cmds as cmds
 import shutil, os, requests, urllib2, zipfile
 
