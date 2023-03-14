@@ -38,7 +38,7 @@ def delete_workspace_control(control):
 class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     TITLE = "Cams"
-    VERSION = "0.0.7"
+    VERSION = "0.0.9"
     """
     Messages:
     """
