@@ -70,10 +70,8 @@ class HUDWindow(QtWidgets.QMainWindow):
 
         ok_cancel_layout = QtWidgets.QHBoxLayout()
         ok_btn = QtWidgets.QPushButton("Ok")
-        apply_btn = QtWidgets.QPushButton("Apply")
         cancel_btn = QtWidgets.QPushButton("Cancel")
         ok_cancel_layout.addWidget(ok_btn)
-        ok_cancel_layout.addWidget(apply_btn)
         ok_cancel_layout.addWidget(cancel_btn)
 
         layout.addWidget(rectangle)
@@ -155,8 +153,7 @@ class HUDWindow(QtWidgets.QMainWindow):
 
         self.refresh_ui()
 
-        ok_btn.clicked.connect(lambda: self.apply_selection(close=True))
-        apply_btn.clicked.connect(lambda: self.apply_selection())
+        ok_btn.clicked.connect(lambda: self.save_changes())
         cancel_btn.clicked.connect(lambda: self.close())
 
     def add_menu_preset(self, preset_name):
@@ -165,132 +162,9 @@ class HUDWindow(QtWidgets.QMainWindow):
             lambda preset=preset_name: self.refresh_ui(preset, change=True)
         )
 
-    def apply_selection(self, close=False):
-        selected_preset = self.get_current_preset()
+    def save_changes(self):
         self.save_prefs()
-
-        # Command for displaying the current frame number (HUD Section 4)
-        def HUD_current_frame():
-            # Get current frame and total frame count
-            Current = cmds.currentTime(query=True)
-            Total = cmds.playbackOptions(query=True, maxTime=True)
-            result = "{}/{}".format(int(Current), int(Total))
-            return result
-
-        # Command for displaying the number of total frames
-        def HUD_total_frames():
-            result = cmds.playbackOptions(query=True, maxTime=True)
-            return result
-
-        # Command for displaying the number of total frames
-        def HUD_framerate():
-            fps_map = {
-                "game": 15,
-                "film": 24,
-                "pal": 25,
-                "ntsc": 30,
-                "show": 48,
-                "palf": 50,
-                "ntscf": 60,
-            }
-            fps = cmds.currentUnit(q=True, t=True)
-            if not isinstance(fps, float):
-                fps = fps_map.get(fps, "None")
-            return str(fps) + "fps"
-
-        # Command for displaying the camera's focal length (HUD Section 5)
-        def HUD_camera_name():
-            # Get the camera attached to the active model panel
-            ModelPane = cmds.getPanel(withFocus=True)
-            Camera = cmds.modelPanel(ModelPane, query=True, camera=True)
-            Attr = ".focalLength"
-            result = cmds.getAttr(Camera + Attr)
-            return result
-
-        # Command for displaying the scene name (HUD Section 7)
-        def HUD_get_scene_name():
-            result = cmds.file(query=True, sceneName=True)
-            if not result:
-                result = "UNTITLED Scene"
-            else:
-                result = cmds.file(query=True, sceneName=True, shortName=True)
-            return result
-
-        # Command for displaying the current user name (HUD Section 9)
-        def HUD_get_username():
-            username = os.getenv("USER")
-            result = username if username else "UNKNOWN"
-            return result
-
-        # Command for displaying the date and hour (HUD Section 9)
-        def HUD_get_date():
-            result = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-            return result
-
-        # Show HUD Display
-        HUDBlock = 0  # 0 for 720, 3 for 640
-        FontSize = "large"  # "small" or "large"
-
-        # Remove HUD sections if they already exist
-        for pos in [0, 2, 4, 5, 7, 9]:
-            cmds.headsUpDisplay(removePosition=[pos, HUDBlock])
-
-        headsup_positions = {
-            "tlc": ["top_left", 0],
-            "tmc": ["top_center", 2],
-            "trc": ["top_right", 4],
-            "blc": ["bottom_left", 5],
-            "bmc": ["bottom_center", 7],
-            "brc": ["bottom_right", 9],
-        }
-
-        for key, item in headsup_positions.items():
-            selected_command = self.hud_presets[selected_preset][key]
-            if selected_command != "None":
-                align = item[0].split("_")[-1]
-
-                if selected_command == "Current Frame":
-                    label = "Frame:"
-                    command = HUD_current_frame
-                elif selected_command == "Total Frames":
-                    label = "Total:"
-                    command = HUD_total_frames
-                elif selected_command == "Framerate":
-                    label = "Framerate:"
-                    command = HUD_framerate
-                elif selected_command == "Username":
-                    label = "User:"
-                    command = HUD_get_username
-                elif selected_command == "Scene Name":
-                    label = ""
-                    command = HUD_get_scene_name
-                elif selected_command == "Date":
-                    label = ""
-                    command = HUD_get_date
-                else:
-                    continue
-
-                cmds.headsUpDisplay(
-                    item[0],
-                    section=item[1],
-                    block=HUDBlock,
-                    bs=FontSize,
-                    label=label,
-                    dfs=FontSize,
-                    lfs=FontSize,
-                    command=command,
-                    blockAlignment=align,
-                    attachToRefresh=True,
-                )
-
-        # Set HUD display color to Maya default
-        cmds.displayColor("headsUpDisplayLabels", 16, dormant=True)
-        cmds.displayColor("headsUpDisplayValues", 16, dormant=True)
-
-        if close:
-            self.close()
-        else:
-            self.refresh_ui(selected_preset)
+        self.close()
 
     def get_current_preset(self):
         return str(self.preset_title.text())
@@ -458,3 +332,7 @@ class HUDWindow(QtWidgets.QMainWindow):
             self.preset_title.setEnabled(False)
 
         self.displayed_preset = preset
+
+
+if __name__ == "__main__":
+    HUDWindow.show_dialog()

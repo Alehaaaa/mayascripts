@@ -36,11 +36,14 @@
         ]
     },
     "cams": {
-        "version": "0.0.8",
+        "version": "0.0.9",
         "changelog": [
+            "=== 0.0.9 ===",
+            "- Dockable Window.",
+            "- Presets Menu.",
+            "",
             "=== 0.0.8 ===",
             "- Added HUD Editor.",
-            "- Better organization.",
             "",
             "=== 0.0.7 ===",
             "- Better organization.",

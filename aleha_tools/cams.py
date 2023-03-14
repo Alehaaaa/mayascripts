@@ -7,7 +7,7 @@ Put this file in your scripts directory:
 Run with:
 
 import aleha_tools.cams as cams
-cams.UI.show_dialog()
+cams.UI().show(dockable=True)
 
 
 """
@@ -24,15 +24,21 @@ import maya.cmds as cmds
 import maya.mel as mel
 
 
-def maya_main_window():
-    main_window_ptr = omui.MQtUtil.mainWindow()
-    return wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
+def get_maya_win():
+    win_ptr = omui.MQtUtil.mainWindow()
+    return wrapInstance(long(win_ptr), QtWidgets.QMainWindow)
+
+
+def delete_workspace_control(control):
+    if cmds.workspaceControl(control, q=True, exists=True):
+        cmds.workspaceControl(control, e=True, close=True)
+        cmds.deleteUI(control, control=True)
 
 
 class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     TITLE = "Cams"
-    VERSION = "0.0.8"
+    VERSION = "0.0.7"
     """
     Messages:
     """
@@ -40,31 +46,20 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
     WORKING_ON_IT = "Still working on this feature!"
     NO_WRITE_PERMISSION = "Insufficient write permissions."
 
-    dlg_instance = None
+    def __init__(self, parent=None):
+        delete_workspace_control(self.TITLE + "WorkspaceControl")
 
-    @classmethod
-    def show_dialog(cls):
-        if not cls.dlg_instance:
-            cls.dlg_instance = UI()
-
-        if cls.dlg_instance.isHidden():
-            cls.dlg_instance.show()
-            cls.dlg_instance.reload()
-
-        else:
-            cls.dlg_instance.raise_()
-            cls.dlg_instance.activateWindow()
-            cls.dlg_instance.reload()
-
-    def __init__(self, parent=maya_main_window()):
-        super(UI, self).__init__(parent)
+        super(self.__class__, self).__init__(parent=parent)
+        self.mayaMainWindow = get_maya_win()
 
         self.__height__ = 25
         self.__width__ = 75
         self.__margin__ = 6
 
-        self.setWindowTitle("{} {}".format(UI.TITLE, UI.VERSION))
-        self.setWindowFlags(self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint)
+        self.setObjectName(self.__class__.TITLE)
+
+        self.setWindowFlags(QtCore.Qt.Window)
+        self.setWindowTitle("{} {}".format(self.TITLE, self.VERSION))
         self.setMaximumHeight(50)
 
         self.data_node()
@@ -86,12 +81,18 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
         # Menu bar layout
         menu_bar = QtWidgets.QMenuBar()
+
         menu_tools = menu_bar.addMenu("Tools")
         self.reload_btn = menu_tools.addAction("Reload")
         self.settings_btn = menu_tools.addAction("Default settings")
         menu_tools.addSeparator()
         self.multicams = menu_tools.addAction("MultiCams")
         self.add_hud = menu_tools.addAction("HUD Creator")
+
+        self.menu_presets = QtWidgets.QMenu("HUD", self)
+        menu_bar.addMenu(self.menu_presets)
+
+        self.add_presets()
 
         menu_extra = menu_bar.addMenu("Extra")
         self.updates = menu_extra.addAction("Check for updates")
@@ -108,6 +109,21 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.cameras_layout = QtWidgets.QHBoxLayout()
         self.main_layout.addLayout(self.default_cam_layout)
         self.main_layout.setMargin(self.__margin__)
+
+    def add_presets(self):
+        self.menu_presets.clear()
+
+        for i in self.get_presets():
+            preset = self.menu_presets.addAction(i)
+            preset.triggered.connect(
+                lambda preset=self.hud_presets[i]: self.apply_selection(preset)
+            )
+
+        self.menu_presets.addSeparator()
+        clear = self.menu_presets.addAction("Reload")
+        clear.triggered.connect(lambda: self.add_presets())
+        clear = self.menu_presets.addAction("Clear HUD")
+        clear.triggered.connect(lambda: self.clear_hud())
 
     def create_widgets(self):
 
@@ -209,6 +225,151 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             delete_action.triggered.connect(lambda cam=cam: self.delete_cam(cam))
 
         menu.exec_(button.mapToGlobal(pos))
+
+    def get_presets(self):
+
+        prefs_dir = os.path.join(
+            os.environ["MAYA_APP_DIR"], cmds.about(v=True), "prefs", "aleha_tools"
+        )
+        prefs_path = os.path.join(prefs_dir, "camsPrefs.aleha")
+
+        presets_list = []
+
+        if os.path.exists(prefs_dir):
+            with open(prefs_path, "r") as prefs_file:
+                user_prefs = eval(prefs_file.read())
+                self.hud_presets = user_prefs["hud"]
+
+            for i in self.hud_presets:
+                presets_list.append(i)
+            return presets_list
+        else:
+            return
+
+    def apply_selection(self, settings):
+
+        # Command for displaying the current frame number (HUD Section 4)
+        def HUD_current_frame():
+            # Get current frame and total frame count
+            Current = cmds.currentTime(query=True)
+            Total = cmds.playbackOptions(query=True, maxTime=True)
+            result = "{}/{}".format(int(Current), int(Total))
+            return result
+
+        # Command for displaying the number of total frames
+        def HUD_total_frames():
+            result = cmds.playbackOptions(query=True, maxTime=True)
+            return result
+
+        # Command for displaying the number of total frames
+        def HUD_framerate():
+            fps_map = {
+                "game": 15,
+                "film": 24,
+                "pal": 25,
+                "ntsc": 30,
+                "show": 48,
+                "palf": 50,
+                "ntscf": 60,
+            }
+            fps = cmds.currentUnit(q=True, t=True)
+            if not isinstance(fps, float):
+                fps = fps_map.get(fps, "None")
+            return str(fps) + "fps"
+
+        # Command for displaying the camera's focal length (HUD Section 5)
+        def HUD_camera_name():
+            # Get the camera attached to the active model panel
+            ModelPane = cmds.getPanel(withFocus=True)
+            Camera = cmds.modelPanel(ModelPane, query=True, camera=True)
+            Attr = ".focalLength"
+            result = cmds.getAttr(Camera + Attr)
+            return result
+
+        # Command for displaying the scene name (HUD Section 7)
+        def HUD_get_scene_name():
+            result = cmds.file(query=True, sceneName=True)
+            if not result:
+                result = "UNTITLED Scene"
+            else:
+                result = cmds.file(query=True, sceneName=True, shortName=True)
+            return result
+
+        # Command for displaying the current user name (HUD Section 9)
+        def HUD_get_username():
+            username = os.getenv("USER")
+            result = username if username else "UNKNOWN"
+            return result
+
+        # Command for displaying the date and hour (HUD Section 9)
+        def HUD_get_date():
+            import datetime
+
+            result = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+            return result
+
+        # Show HUD Display
+        FontSize = "large"  # "small" or "large"
+
+        # Remove HUD sections if they already exist
+        for pos in [0, 2, 4, 5, 7, 9]:
+            cmds.headsUpDisplay(removePosition=[pos, 0])
+
+        headsup_positions = {
+            "tlc": ["top_left", 0],
+            "tmc": ["top_center", 2],
+            "trc": ["top_right", 4],
+            "blc": ["bottom_left", 5],
+            "bmc": ["bottom_center", 7],
+            "brc": ["bottom_right", 9],
+        }
+
+        for key, item in headsup_positions.items():
+            selected_command = settings[key]
+            if selected_command != "None":
+                align = item[0].split("_")[-1]
+
+                if selected_command == "Current Frame":
+                    label = "Frame:"
+                    command = HUD_current_frame
+                elif selected_command == "Total Frames":
+                    label = "Total:"
+                    command = HUD_total_frames
+                elif selected_command == "Framerate":
+                    label = "Framerate:"
+                    command = HUD_framerate
+                elif selected_command == "Username":
+                    label = "User:"
+                    command = HUD_get_username
+                elif selected_command == "Scene Name":
+                    label = ""
+                    command = HUD_get_scene_name
+                elif selected_command == "Date":
+                    label = ""
+                    command = HUD_get_date
+                else:
+                    continue
+
+                cmds.headsUpDisplay(
+                    item[0],
+                    section=item[1],
+                    block=0,
+                    bs=FontSize,
+                    label=label,
+                    dfs=FontSize,
+                    lfs=FontSize,
+                    command=command,
+                    blockAlignment=align,
+                    attachToRefresh=True,
+                )
+
+        # Set HUD display color to Maya default
+        cmds.displayColor("headsUpDisplayLabels", 16, dormant=True)
+        cmds.displayColor("headsUpDisplayValues", 16, dormant=True)
+
+    def clear_hud(self):
+        for pos in [0, 2, 4, 5, 7, 9]:
+            cmds.headsUpDisplay(removePosition=[pos, 0])
 
     def settings(self):
 
@@ -664,7 +825,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         if not py:
             extra = "reload(tool);tool.{}();".format(tool)
         else:
-            extra = "tool.{}.show_dialog()".format(tool)
+            extra = "reload(tool);tool.{}.show_dialog()".format(tool)
 
         exec("import aleha_tools.cams_tools.{} as tool;{}".format(tool, extra))
 
@@ -676,7 +837,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
     def check_for_updates(self, warning=True, *args):
         import json, urllib2
 
-        script_name = UI.TITLE.lower()
+        script_name = self.TITLE.lower()
 
         url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/version.json"
 
@@ -695,11 +856,11 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             version = str(script["version"])
             changelog = str("\n".join(script["changelog"]))
 
-        if version > UI.VERSION:
+        if version > self.VERSION:
             update_available = cmds.confirmDialog(
-                title="New update for {0}!".format(UI.TITLE),
+                title="New update for {0}!".format(self.TITLE),
                 message="Version {0} available, you are using {1}\n\nChangelog:\n{2}".format(
-                    version, UI.VERSION, changelog
+                    version, self.VERSION, changelog
                 ),
                 messageAlign="center",
                 button=["Install", "Skip", "Close"],
@@ -711,12 +872,31 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
                 import aleha_tools.updater as updater
 
+                reload(updater)
+
                 updater.Updater().install(script_name)
+                try:
+                    currentShelf = cmds.tabLayout(
+                        mel.eval("$nul=$gShelfTopLevel"), q=1, st=1
+                    )
+                    buttons = cmds.shelfLayout(currentShelf, q=True, ca=True)
+                    for b in buttons:
+                        if (
+                            cmds.shelfButton(b, exists=True)
+                            and cmds.shelfButton(b, q=True, l=True) == "cams"
+                        ):
+                            cmds.shelfButton(
+                                b,
+                                edit=True,
+                                command="import aleha_tools.cams as cams;cams.UI().show(dockable=True)",
+                            )
+                except:
+                    pass
 
                 self.deleteLater()
                 cmds.evalDeferred(
-                    "import aleha_tools.{} as cams;reload(cams);cams.UI.show_dialog();".format(
-                        script_name, script_name, script_name
+                    "import aleha_tools.{} as cams;reload(cams);cams.UI.show(dockable=True);".format(
+                        script_name
                     )
                 )
 
@@ -997,15 +1177,7 @@ class Options(QtWidgets.QDialog):
             self.gate_mask_color_slider.setValue(v)
 
 
-# om.MGlobal.displayWarning(UI.WORKING_ON_IT)
+######################
 
-if __name__ == "__main__":
-
-    try:
-        ui.close()
-        ui.deleteLater()
-    except:
-        pass
-
-    ui = UI()
-    ui.show()
+ui = UI()
+ui.show(dockable=True)

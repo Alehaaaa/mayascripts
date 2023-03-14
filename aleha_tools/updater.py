@@ -1,13 +1,12 @@
 class Updater:
     def get_latest_release(self):
-        import requests
+        import urllib2, json
 
         repo_url = "https://api.github.com/repos/Alehaaaa/mayascripts/releases"
 
-        response = requests.get(repo_url)
-
-        if response.status_code == requests.codes.ok:
-            releases_info = response.json()[0]
+        response = urllib2.urlopen(repo_url)
+        if response.code == 200:
+            releases_info = json.loads(response.read())[0]
             latest_release = releases_info["tag_name"]
             if latest_release:
                 release = "https://codeload.github.com/Alehaaaa/mayascripts/legacy.zip/refs/tags/{}".format(
@@ -59,8 +58,16 @@ class Updater:
 
         if os.path.isfile(tmpZipFile):
             os.remove(tmpZipFile)
+
+        # Remove old tool files
         if os.path.isdir(toolsFolder):
-            shutil.rmtree(toolsFolder)
+            for filename in os.listdir(toolsFolder):
+                f = os.path.join(toolsFolder, filename)
+                if (tool in f) or ("updater" in f):
+                    if os.path.isfile(f):
+                        os.remove(f)
+                    elif os.path.isdir(f):
+                        shutil.rmtree(f)
 
         output = self.download(FileUrl, tmpZipFile)
 
