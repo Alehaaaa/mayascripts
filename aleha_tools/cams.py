@@ -38,7 +38,7 @@ def delete_workspace_control(control):
 class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     TITLE = "Cams"
-    VERSION = "0.0.7"
+    VERSION = "0.0.9"
     """
     Messages:
     """
@@ -854,13 +854,28 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             script = data[script_name]
 
             version = str(script["version"])
-            changelog = str("\n".join(script["changelog"]))
+            changelog = script["changelog"]
+
+        def convert_list_to_string():
+            result, sublst = [], []
+            for item in changelog:
+                if item:
+                    sublst.append(str(item))
+                else:
+                    if sublst:
+                        result.append(sublst)
+                        sublst = []
+            if sublst:
+                result.append(sublst)
+            result = result[:4]
+            result.append(["== And more =="])
+            return "\n\n".join(["\n".join(x) for x in result])
 
         if version > self.VERSION:
             update_available = cmds.confirmDialog(
                 title="New update for {0}!".format(self.TITLE),
                 message="Version {0} available, you are using {1}\n\nChangelog:\n{2}".format(
-                    version, self.VERSION, changelog
+                    version, self.VERSION, convert_list_to_string()
                 ),
                 messageAlign="center",
                 button=["Install", "Skip", "Close"],
@@ -895,7 +910,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
                 self.deleteLater()
                 cmds.evalDeferred(
-                    "import aleha_tools.{} as cams;reload(cams);cams.UI.show(dockable=True);".format(
+                    "import aleha_tools.{} as cams;reload(cams);cams.UI().show(dockable=True);".format(
                         script_name
                     )
                 )
