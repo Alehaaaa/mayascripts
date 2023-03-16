@@ -60,8 +60,11 @@
         ]
     },
     "spaceswitch_pyside2": {
-        "version": "0.0.4",
+        "version": "0.0.5",
         "changelog": [
+            "=== 0.0.5 ===",
+            "- Fixed when no keyframes.",
+            "",
             "=== 0.0.4 ===",
             "- Installation of Updates!",
             "- Fixed issues.",
