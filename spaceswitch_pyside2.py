@@ -8,8 +8,8 @@ or
 
 Run with:
 
-import spaceswitch_pyside2
-spaceswitch_pyside2.UI.show_dialog()
+import spaceswitch_pyside2 as space
+space.UI.show_dialog()
 
 
 '''
@@ -28,7 +28,7 @@ class UI(QtWidgets.QDialog):
     
     SCRIPT = "spaceswitch_pyside2"
     TITLE = 'SpaceSwitch'
-    VERSION = '0.0.4'
+    VERSION = '0.0.5'
     """
     Messages:
     """
@@ -348,8 +348,10 @@ class UI(QtWidgets.QDialog):
         elif len(sel) > 2:
             cmds.warning(too_many_objects)
             return
-
-        keyframes = sorted(set(cmds.keyframe(target, query=True)))
+        try:
+            keyframes = sorted(set(cmds.keyframe(target, query=True)))
+        except:
+            keyframes = None
         # Check if there is a timeline selection.
         timeline = cmds.timeControl('timeControl1', q=1, ra=1)
 
