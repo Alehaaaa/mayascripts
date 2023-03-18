@@ -258,8 +258,8 @@ class UI:
                 om.MGlobal.displayWarning(UI.NO_WRITE_PERMISSION)
 
         # Close and reopen the window
-        if cmds.window(script_name, exists=True):
-            cmds.deleteUI(script_name)
+        """if cmds.window(script_name, exists=True):
+            cmds.deleteUI(script_name)"""
         cmds.evalDeferred("reload({});{}.UI();".format(script_name, script_name))
 
     def coffee(self):
@@ -278,6 +278,3 @@ class UI:
 
     def getcolor(self):
         return [round(random.uniform(0.525, 0.750), 3) for i in range(3)]
-
-
-UI()
