@@ -91,6 +91,8 @@ class UI:
         cmds.separator(h=self.__margin__ / 2, style="none")
         cmds.showWindow(self.window)
 
+        self.check_for_updates()
+
     def create_layouts(self):
 
         # Get all custom cameras in scene
