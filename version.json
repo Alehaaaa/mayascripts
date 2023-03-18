@@ -1,7 +1,10 @@
 {
     "cams_free": {
-        "version": "0.0.4",
+        "version": "0.0.5",
         "changelog": [
+            "=== 0.0.5 ===",
+            "- Fixed issues.",
+            "",
             "=== 0.0.4 ===",
             "- Installation of Updates!",
             "- Fixed issues.",

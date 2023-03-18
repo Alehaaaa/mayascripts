@@ -21,7 +21,7 @@ import random
 class UI:
 
     TITLE = "Cams Free"
-    VERSION = "0.0.4"
+    VERSION = "0.0.5"
     """
     Error Messages:
     """
@@ -36,26 +36,26 @@ class UI:
         self.layouts = {}
 
         # Create window
-        if cmds.window(UI.TITLE, exists=True):
-            cmds.deleteUI(UI.TITLE)
+        if cmds.window("cams_free", exists=True):
+            cmds.deleteUI("cams_free")
         try:
             self.window = cmds.window(
-                UI.TITLE,
+                "cams_free",
+                t=self.TITLE,
                 h=30,
                 w=80,
                 menuBar=True,
                 rtf=True,
                 tlb=True,
-                sizeable=False,
             )
         except:
             self.window = cmds.window(
-                UI.TITLE,
+                "cams_free",
+                t=self.TITLE,
                 h=30,
                 w=80,
                 menuBar=True,
                 rtf=True,
-                sizeable=False,
             )
 
         # Menu bar
@@ -135,11 +135,6 @@ class UI:
 
             cmds.separator(w=self.__margin__ / 5, style="none")
             cmds.setParent("..")
-
-        try:
-            cmds.window(UI.TITLE, edit=True, width=100, rtf=True)
-        except:
-            pass
 
     def delete_cam(self, cam):
         result = cmds.confirmDialog(
@@ -263,8 +258,9 @@ class UI:
                 om.MGlobal.displayWarning(UI.NO_WRITE_PERMISSION)
 
         # Close and reopen the window
-        cmds.evalDeferred("reload(cams_free);cams_free.UI();")
-        """cmds.deleteUI(self.window, window=True)"""
+        if cmds.window(script_name, exists=True):
+            cmds.deleteUI(script_name)
+        cmds.evalDeferred("reload({});{}.UI();".format(script_name, script_name))
 
     def coffee(self):
         coffee = cmds.confirmDialog(
