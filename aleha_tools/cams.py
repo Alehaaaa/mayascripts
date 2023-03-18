@@ -38,7 +38,7 @@ def delete_workspace_control(control):
 class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     TITLE = "Cams"
-    VERSION = "0.0.9"
+    VERSION = "0.0.91"
     """
     Messages:
     """
@@ -74,8 +74,6 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         if not self.skip_update:
             self.check_for_updates(warning=False)
 
-        # self.script_job_id = cmds.scriptJob(event=["Undo", self.reload])
-
     def create_layouts(self):
         self.main_layout = QtWidgets.QHBoxLayout(self)
 
@@ -87,7 +85,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.settings_btn = menu_tools.addAction("Default settings")
         menu_tools.addSeparator()
         self.multicams = menu_tools.addAction("MultiCams")
-        self.add_hud = menu_tools.addAction("HUD Creator")
+        self.add_hud = menu_tools.addAction("HUD Editor")
 
         self.menu_presets = QtWidgets.QMenu("HUD", self)
         menu_bar.addMenu(self.menu_presets)
@@ -194,10 +192,14 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         select_action = menu.addAction("Select")
         select_action.triggered.connect(lambda cam=cam: self.select_cam(cam))
 
-        menu.addSeparator()
+        duplicate_action = menu.addAction("Duplicate")
+        duplicate_action.triggered.connect(lambda cam=cam: self.duplicate_cam(cam))
+
         if cam != self.default_cam[0]:
             rename_action = menu.addAction("Rename")
             rename_action.triggered.connect(lambda cam=cam: self.rename_cam(cam))
+
+        menu.addSeparator()
 
         self.resolution_checkbox = menu.addAction("Display Gate")
         self.resolution_checkbox.setCheckable(True)
@@ -280,6 +282,17 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         # Command for displaying the camera's focal length (HUD Section 5)
         def HUD_camera_name():
             # Get the camera attached to the active model panel
+            try:
+                ModelPane = cmds.getPanel(withFocus=True)
+                Camera = cmds.modelPanel(ModelPane, query=True, camera=True)
+                result = cmds.ls(Camera, long=True)[0][1:]
+                result = result[1:] if result.startswith("|") else result
+            except:
+                result = "None"
+            return result
+
+        def HUD_camera_focal_length():
+            # Get the camera attached to the active model panel
             ModelPane = cmds.getPanel(withFocus=True)
             Camera = cmds.modelPanel(ModelPane, query=True, camera=True)
             Attr = ".focalLength"
@@ -344,6 +357,12 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                 elif selected_command == "Scene Name":
                     label = ""
                     command = HUD_get_scene_name
+                elif selected_command == "Camera Name":
+                    label = "Camera:"
+                    command = HUD_camera_name
+                elif selected_command == "Focal Length":
+                    label = "Focal Length:"
+                    command = HUD_camera_focal_length
                 elif selected_command == "Date":
                     label = ""
                     command = HUD_get_date
@@ -382,6 +401,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             self.settings_window.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint
         )
         self.settings_window.setWindowTitle("Cams Default settings")
+        self.settings_window.setFixedSize(320, 230)
 
         def get_float(value):
             return "{:.3f}".format(value / 1000.0)
@@ -523,7 +543,6 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             main_layout.addRow(widget_container)
 
             if index == 5:
-                main_layout.addRow(QtWidgets.QFrame(frameShape=QtWidgets.QFrame.HLine))
                 main_layout.addRow(ok_close_layout)
 
         overscan_slider.valueChanged.connect(
@@ -543,6 +562,16 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         gate_mask_color_slider.valueChanged.connect(
             lambda: update_button_value(gate_mask_color_slider.value())
         )
+
+        all_widgets = [
+            near_clip_plane,
+            far_clip_plane,
+            overscan_value,
+            gate_mask_opacity_value,
+        ]
+
+        for widget in all_widgets:
+            widget.returnPressed.connect(lambda: apply_settings())
 
         ok_btn.clicked.connect(lambda: apply_settings())
         close_btn.clicked.connect(lambda: self.settings_window.close())
@@ -673,6 +702,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.rename_window = QtWidgets.QInputDialog()
         self.rename_window.setWindowTitle("Rename {}".format(cam))
         self.rename_window.setLabelText("New name:")
+        self.rename_window.setTextValue(cam)
 
         self.rename_window.setWindowFlags(
             self.rename_window.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint
@@ -722,6 +752,10 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         cmds.setAttr(
             "{}.displayGateMask".format(cam), self.resolution_checkbox.isChecked()
         )
+
+    def duplicate_cam(self, cam):
+        cmds.duplicate(cam)
+        self.reload()
 
     def delete_cam(self, cam):
         delete = QtWidgets.QMessageBox()
@@ -881,7 +915,6 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                 button=["Install", "Skip", "Close"],
                 defaultButton="Install",
                 cancelButton="Close",
-                dismissString="Close",
             )
             if update_available == "Install":
 
@@ -915,7 +948,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                     )
                 )
 
-            if update_available == "Skip":
+            elif update_available == "Skip":
                 self.data_node(skip_update=1)
         else:
             if warning:
@@ -982,6 +1015,7 @@ class Options(QtWidgets.QDialog):
 
         self.setWindowTitle("Options: {}".format(self.cam))
         self.setWindowFlags(self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint)
+        self.setFixedSize(300, 227)
 
         # First section: Attributes
         self.onlyFloat = QtGui.QRegExpValidator(QtCore.QRegExp(r"[0-9].+"))
@@ -1093,6 +1127,19 @@ class Options(QtWidgets.QDialog):
 
     def create_connections(self):
 
+        all_widgets = [
+            self.focal_length_value,
+            self.overscan_value,
+            self.near_clip_plane,
+            self.far_clip_plane,
+            self.gate_mask_opacity_value,
+        ]
+
+        for widget in all_widgets:
+            widget.returnPressed.connect(
+                lambda cam=self.cam: self.apply_modifications(cam, close=True)
+            )
+
         self.ok_btn.clicked.connect(
             lambda cam=self.cam: self.apply_modifications(cam, close=True)
         )
@@ -1190,9 +1237,3 @@ class Options(QtWidgets.QDialog):
             button.setStyleSheet("background-color: {}".format(color.name()))
             h, s, v, _ = color.getHsv()
             self.gate_mask_color_slider.setValue(v)
-
-
-######################
-
-ui = UI()
-ui.show(dockable=True)

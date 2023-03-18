@@ -28,7 +28,7 @@ class HUDWindow(QtWidgets.QMainWindow):
 
     def __init__(self, parent=maya_main_window()):
         super(HUDWindow, self).__init__(parent)
-        self.setWindowTitle("Add HUD Items")
+        self.setWindowTitle("HUD Editor")
         self.setFixedSize(370, 260)
 
         """try:"""
@@ -95,6 +95,8 @@ class HUDWindow(QtWidgets.QMainWindow):
             "Total Frames",
             "Framerate",
             "Username",
+            "Camera Name",
+            "Focal Length",
             "Date",
         ]
 
@@ -204,8 +206,14 @@ class HUDWindow(QtWidgets.QMainWindow):
                 self.hud_presets = self.user_prefs["hud"]
 
     def save_prefs(self):
-        current_preset = self.get_current_preset()
+        if (
+            self.displayed_preset == "Default"
+            and self.get_current_preset() != "Default"
+        ):
+            cmds.warning("Cannot modify Default preset name.")
+            self.preset_title.setText("Default")
 
+        current_preset = self.get_current_preset()
         try:
             if current_preset != self.displayed_preset:
                 self.hud_presets[current_preset] = self.hud_presets.pop(
@@ -262,23 +270,34 @@ class HUDWindow(QtWidgets.QMainWindow):
     def delete_preset(self):
         current_preset = self.get_current_preset()
 
-        delete = QtWidgets.QMessageBox()
-        response = delete.question(
-            None,
-            "Delete Preset",
-            "Are you sure you want to delete %s?" % current_preset,
-            delete.Yes | delete.No,
-            delete.No,
-        )
+        if current_preset != "Default":
 
-        if response == delete.Yes:
-            self.hud_presets.pop(current_preset)
+            delete = QtWidgets.QMessageBox()
+            response = delete.question(
+                None,
+                "Delete Preset",
+                "Are you sure you want to delete %s?" % current_preset,
+                delete.Yes | delete.No,
+                delete.No,
+            )
 
-            for action in self.menu_presets.actions():
-                if action.text() == current_preset:
-                    self.menu_presets.removeAction(action)
-            self.refresh_ui()
-            self.save_prefs()
+            if response == delete.Yes:
+                self.hud_presets.pop(current_preset)
+
+                for action in self.menu_presets.actions():
+                    if action.text() == current_preset:
+                        self.menu_presets.removeAction(action)
+                self.refresh_ui()
+                self.save_prefs()
+        else:
+            no_delete_default = QtWidgets.QMessageBox()
+            no_delete_default.information(
+                None,
+                "Cannot delete Default",
+                "The Default preset cannot be deleted.",
+                no_delete_default.Ok,
+                no_delete_default.Ok,
+            )
 
     def refresh_ui(self, preset=None, change=False):
         current_preset = self.get_current_preset()
