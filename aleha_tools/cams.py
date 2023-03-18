@@ -293,10 +293,13 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
         def HUD_camera_focal_length():
             # Get the camera attached to the active model panel
-            ModelPane = cmds.getPanel(withFocus=True)
-            Camera = cmds.modelPanel(ModelPane, query=True, camera=True)
-            Attr = ".focalLength"
-            result = cmds.getAttr(Camera + Attr)
+            try:
+                ModelPane = cmds.getPanel(withFocus=True)
+                Camera = cmds.modelPanel(ModelPane, query=True, camera=True)
+                Attr = ".focalLength"
+                result = cmds.getAttr(Camera + Attr)
+            except:
+                result = "None"
             return result
 
         # Command for displaying the scene name (HUD Section 7)
