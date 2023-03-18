@@ -32,7 +32,7 @@ def maya_main_window():
 class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     TITLE = "Cams"
-    VERSION = "0.0.7"
+    VERSION = "0.0.71"
     """
     Messages:
     """
@@ -712,7 +712,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                     repo_url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/aleha_tools/updater.py"
 
                     exec(
-                        "import requests;exec(requests.get('{}').text);Updater().install('{}');".format(
+                        "import urllib2;exec(urllib2.urlopen('{}').read());Updater().install('{}');".format(
                             repo_url, script_name
                         )
                     )

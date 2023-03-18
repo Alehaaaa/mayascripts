@@ -36,8 +36,12 @@
         ]
     },
     "cams": {
-        "version": "0.0.9",
+        "version": "0.0.91",
         "changelog": [
+            "=== 0.0.91 ===",
+            "- Duplicate camera.",
+            "- Added more HUDs.",
+            "",
             "=== 0.0.9 ===",
             "- Dockable Window.",
             "- Presets Menu.",

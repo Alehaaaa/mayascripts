@@ -8,7 +8,7 @@ or
 
 Run with:
 
-import spaceswitch_pyside2 as space
+import spaceswitch as space
 space.UI.show_dialog()
 
 
@@ -26,7 +26,7 @@ def MayaWindow():
 
 class UI(QtWidgets.QDialog):
 
-    SCRIPT = "spaceswitch_pyside2"
+    SCRIPT = "spaceswitch"
     TITLE = "SpaceSwitch"
     VERSION = "0.0.5"
     """

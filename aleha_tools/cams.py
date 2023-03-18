@@ -377,7 +377,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             self.settings_window.close()
             self.settings_window.deleteLater()
 
-        self.settings_window = QtWidgets.QDialog(parent=maya_main_window())
+        self.settings_window = QtWidgets.QDialog(parent=get_maya_win())
         self.settings_window.setWindowFlags(
             self.settings_window.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint
         )
@@ -976,7 +976,7 @@ class Options(QtWidgets.QDialog):
         cls.dlg_instance.show()
 
     def __init__(self, cam, parent=None):
-        super(Options, self).__init__(maya_main_window())
+        super(Options, self).__init__(get_maya_win())
 
         self.cam = cam
 
