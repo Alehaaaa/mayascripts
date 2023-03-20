@@ -8,8 +8,8 @@ or
 
 Run with:
 
-import spaceswitch as space
-space.UI.show_dialog()
+import aleha_tools.spaceswitch as spaceswitch
+spaceswitch.UI.show_dialog()
 
 
 """
@@ -149,17 +149,23 @@ class UI(QtWidgets.QDialog):
         sel = self.getSelectedObj()
         no_selection = "No selection."
         no_target = "No target object selected."
-        if len(sel) > 0:
-            if self.namespaces:
-                name = "...:%s" % sel[0].split(":")[1]
-                self.selection.setText(name)
-                self.selection.setAlignment(
-                    QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
-                )
+        if len(sel) != 0:
+            if ":" in sel[0]:
+                if self.namespaces:
+                    name = "...:%s" % sel[0].split(":")[1]
+                    self.selection.setText(name)
+                    self.selection.setAlignment(
+                        QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
+                    )
+                else:
+                    self.selection.setText(sel[0])
+                    self.selection.setAlignment(
+                        QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                    )
             else:
                 self.selection.setText(sel[0])
                 self.selection.setAlignment(
-                    QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                    QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
                 )
             self.attribute_btn.hide()
             if len(self.getEnum()) > 0:
@@ -181,30 +187,32 @@ class UI(QtWidgets.QDialog):
                 )
             else:
                 self.show_hide_target()
-                if not self.namespaces:
-                    self.selected_target.setAlignment(
-                        QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
-                    )
+                if ":" in sel[1]:
+                    if self.namespaces:
+                        name = "...:%s" % sel[1].split(":")[1]
+                        self.selected_target.setText(name)
+                        self.selected_target.setAlignment(
+                            QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
+                        )
+                    else:
+                        self.selected_target.setText(sel[1])
+                        self.selected_target.setAlignment(
+                            QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                        )
                 else:
+                    self.selected_target.setText(sel[1])
                     self.selected_target.setAlignment(
                         QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
                     )
-                if self.namespaces:
-                    name = "...:%s" % sel[1].split(":")[1]
-                    self.selected_target.setText(name)
-                else:
-                    self.selected_target.setText(sel[1])
-        else:
-            self.attribute_btn.hide()
-            self.selection.setText(no_selection)
-            self.selected_target.setText(no_target)
-            self.selection.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-            self.selected_target.setAlignment(
-                QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
-            )
-            self.apply_btn.setEnabled(False)
-            self.combobox.clear()
-            self.combobox.setEnabled(False)
+            return
+        self.attribute_btn.hide()
+        self.selection.setText(no_selection)
+        self.selected_target.setText(no_target)
+        self.selection.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+        self.selected_target.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+        self.apply_btn.setEnabled(False)
+        self.combobox.clear()
+        self.combobox.setEnabled(False)
 
     def getEnum(self):
         sel = self.getSelectedObj()[0]
