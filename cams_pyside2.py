@@ -717,9 +717,25 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                         )
                     )
                     self.deleteLater()
+
+                    currentShelf = cmds.tabLayout(
+                        mel.eval("$nul=$gShelfTopLevel"), q=1, st=1
+                    )
+                    buttons = cmds.shelfLayout(currentShelf, q=True, ca=True)
+                    for b in buttons:
+                        if (
+                            cmds.shelfButton(b, exists=True)
+                            and cmds.shelfButton(b, q=True, l=True) == "cams"
+                        ):
+                            cmds.shelfButton(
+                                b,
+                                edit=True,
+                                command="import aleha_tools.cams as cams;cams.UI().show(dockable=True)",
+                            )
+
                     cmds.evalDeferred(
-                        "import aleha_tools.{} as cams;reload(cams);cams.UI.show_dialog();".format(
-                            script_name, script_name, script_name
+                        "import aleha_tools.{} as cams;reload(cams);cams.UI().show(dockable=True);".format(
+                            script_name
                         )
                     )
                 except:
