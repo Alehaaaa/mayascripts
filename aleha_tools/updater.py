@@ -141,6 +141,7 @@ class Updater:
                         cmds.about(version=True),
                         "scripts",
                         "aleha_tools",
+                        "icons",
                         "{}.svg".format(tool),
                     ),
                     label=tool,
