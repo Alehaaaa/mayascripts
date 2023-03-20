@@ -26,7 +26,7 @@ def MayaWindow():
 
 class UI(QtWidgets.QDialog):
 
-    SCRIPT = "spaceswitch_pyside2"
+    SCRIPT = "spaceswitch"
     TITLE = "SpaceSwitch"
     VERSION = "0.0.5"
     """
@@ -389,6 +389,8 @@ class UI(QtWidgets.QDialog):
     def check_for_updates(self, warning=True, *args):
         import json, urllib2
 
+        script_name = UI.TITLE.lower()
+
         url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/version.json"
 
         try:
@@ -401,14 +403,14 @@ class UI(QtWidgets.QDialog):
 
         if content:
             data = json.loads(content)
-            script = data[UI.SCRIPT.lower()]
+            script = data[script_name]
 
             version = str(script["version"])
             changelog = str("\n".join(script["changelog"]))
 
         if version > UI.VERSION:
             update_available = cmds.confirmDialog(
-                title="Update {0}!".format(UI.TITLE),
+                title="New update for {0}!".format(UI.TITLE),
                 message="Version {0} available, you are using {1}\n\nChangelog:\n{2}".format(
                     version, UI.VERSION, changelog
                 ),
@@ -419,54 +421,31 @@ class UI(QtWidgets.QDialog):
                 dismissString="Close",
             )
             if update_available == "Install":
-                self.install()
+                try:
+                    repo_url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/aleha_tools/updater.py"
+
+                    exec(
+                        "import urllib2;exec(urllib2.urlopen('{}').read());Updater().install('{}');".format(
+                            repo_url, script_name
+                        )
+                    )
+                    self.deleteLater()
+
+                    cmds.evalDeferred(
+                        "import aleha_tools.{} as spaceswitch;spaceswitch.UI.show_dialog();".format(
+                            script_name
+                        )
+                    )
+                except:
+                    cmds.warning("Could not update the script!")
+                    cmds.evalDeferred(
+                        "import spaceswitch_pyside2 as spaceswitch;spaceswitch.UI.show_dialog();"
+                    )
+                    return
+
         else:
             if warning:
                 om.MGlobal.displayWarning("All up-to-date.")
-
-    def install(self, *args):
-        import os, urllib2
-
-        url = (
-            "https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/{0}.py".format(
-                UI.SCRIPT.lower()
-            )
-        )
-
-        try:
-            response = urllib2.urlopen(url, timeout=1)
-        except:
-            om.MGlobal.displayWarning(UI.NO_INTERNET)
-            return
-        content = response.read()
-
-        if not content:
-            om.MGlobal.displayWarning(UI.NO_INTERNET)
-            return
-
-        scriptPath = os.environ["MAYA_SCRIPT_PATH"]
-        path = []
-
-        for i in scriptPath.split(os.pathsep):
-            file_path = os.path.join(i, UI.SCRIPT.lower() + ".py")
-            if os.path.isfile(file_path):
-                path.append(file_path)
-
-        for p in path:
-            try:
-                with open(p, "w") as f:
-                    f.write(content)
-
-            except:
-                om.MGlobal.displayWarning(UI.NO_WRITE_PERMISSION)
-
-        # Close and reopen the window
-        self.deleteLater()
-        cmds.evalDeferred(
-            "import {};reload({});{}.UI.show_dialog();".format(
-                UI.SCRIPT, UI.SCRIPT, UI.SCRIPT
-            )
-        )
 
     def coffee(self):
         aleha_credits = QtWidgets.QMessageBox()

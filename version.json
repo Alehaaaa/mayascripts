@@ -56,22 +56,15 @@
             "- Added HUD Editor.",
             "",
             "=== 0.0.7 ===",
-            "- Better organization.",
-            "",
-            "=== 0.0.6 ===",
-            "- Added Tear Off Camera.",
-            "",
-            "=== 0.0.5 ===",
-            "- Installation of Updates!",
-            "- Fixed issues.",
-            "",
-            "=== 0.0.4 ===",
-            "- Initial Release"
+            "- Better organization."
         ]
     },
     "spaceswitch_pyside2": {
-        "version": "0.0.5",
+        "version": "0.0.6",
         "changelog": [
+            "=== 0.0.6 ===",
+            "- Better organization.",
+            "",
             "=== 0.0.5 ===",
             "- Fixed when no keyframes.",
             "",
@@ -81,6 +74,13 @@
             "",
             "=== 0.0.3 ===",
             "- Initial Release"
+        ]
+    },
+    "spaceswitch": {
+        "version": "0.0.7",
+        "changelog": [
+            "=== 0.0.7 ===",
+            "- Better organization."
         ]
     }
 }

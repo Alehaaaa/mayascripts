@@ -739,7 +739,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                         )
                     )
                 except:
-                    cmds.warning("No internet connection!")
+                    cmds.warning("Could not update the script!")
                     cmds.evalDeferred(
                         "import cams_pyside2 as cams;cams.UI.show_dialog();"
                     )
