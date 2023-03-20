@@ -26,15 +26,13 @@ def MayaWindow():
 
 class UI(QtWidgets.QDialog):
 
-    SCRIPT = "spaceswitch"
     TITLE = "SpaceSwitch"
-    VERSION = "0.0.6"
+    VERSION = "0.0.7"
     """
     Messages:
     """
     NO_INTERNET = "Could not establish a connection to the server."
     WORKING_ON_IT = "Still working on this feature!"
-    NO_WRITE_PERMISSION = "Insufficient write permissions."
 
     dlg_instance = None
 
@@ -389,6 +387,8 @@ class UI(QtWidgets.QDialog):
     def check_for_updates(self, warning=True, *args):
         import json, urllib2
 
+        script_name = self.TITLE.lower()
+
         url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/version.json"
 
         try:
@@ -401,72 +401,54 @@ class UI(QtWidgets.QDialog):
 
         if content:
             data = json.loads(content)
-            script = data[UI.SCRIPT.lower()]
+            script = data[script_name]
 
             version = str(script["version"])
-            changelog = str("\n".join(script["changelog"]))
+            changelog = script["changelog"]
 
-        if version > UI.VERSION:
+        def convert_list_to_string():
+            result, sublst = [], []
+            for item in changelog:
+                if item:
+                    sublst.append(str(item))
+                else:
+                    if sublst:
+                        result.append(sublst)
+                        sublst = []
+            if sublst:
+                result.append(sublst)
+            result = result[:4]
+            result.append(["== And more =="])
+            return "\n\n".join(["\n".join(x) for x in result])
+
+        if version > self.VERSION:
             update_available = cmds.confirmDialog(
-                title="Update {0}!".format(UI.TITLE),
+                title="New update for {0}!".format(self.TITLE),
                 message="Version {0} available, you are using {1}\n\nChangelog:\n{2}".format(
-                    version, UI.VERSION, changelog
+                    version, self.VERSION, convert_list_to_string()
                 ),
                 messageAlign="center",
                 button=["Install", "Close"],
                 defaultButton="Install",
                 cancelButton="Close",
-                dismissString="Close",
             )
             if update_available == "Install":
-                self.install()
+
+                import aleha_tools.updater as updater
+
+                reload(updater)
+
+                updater.Updater().install(script_name)
+
+                self.deleteLater()
+                cmds.evalDeferred(
+                    "import aleha_tools.{} as spaceswitch;reload(spaceswitch);spaceswitch.UI().show(dockable=True);".format(
+                        script_name
+                    )
+                )
         else:
             if warning:
                 om.MGlobal.displayWarning("All up-to-date.")
-
-    def install(self, *args):
-        import os, urllib2
-
-        url = (
-            "https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/{0}.py".format(
-                UI.SCRIPT.lower()
-            )
-        )
-
-        try:
-            response = urllib2.urlopen(url, timeout=1)
-        except:
-            om.MGlobal.displayWarning(UI.NO_INTERNET)
-            return
-        content = response.read()
-
-        if not content:
-            om.MGlobal.displayWarning(UI.NO_INTERNET)
-            return
-
-        scriptPath = os.environ["MAYA_SCRIPT_PATH"]
-        path = []
-
-        for i in scriptPath.split(os.pathsep):
-            file_path = os.path.join(i, UI.SCRIPT.lower() + ".py")
-            if os.path.isfile(file_path):
-                path.append(file_path)
-
-        for p in path:
-            try:
-                with open(p, "w") as f:
-                    f.write(content)
-
-            except:
-                om.MGlobal.displayWarning(UI.NO_WRITE_PERMISSION)
-
-        # Close and reopen the window
-        self.deleteLater()
-        cmds.evalDeferred(
-            "import {};reload({});{}.UI.show_dialog();".format(
-                UI.SCRIPT, UI.SCRIPT, UI.SCRIPT
-            )
-        )
 
     def coffee(self):
         aleha_credits = QtWidgets.QMessageBox()
