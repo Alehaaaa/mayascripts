@@ -1,19 +1,4 @@
 class Updater:
-    def get_latest_release(self):
-        import urllib2, json
-
-        repo_url = "https://api.github.com/repos/Alehaaaa/mayascripts/releases"
-
-        response = urllib2.urlopen(repo_url)
-        if response.code == 200:
-            releases_info = json.loads(response.read())[0]
-            latest_release = releases_info["tag_name"]
-            if latest_release:
-                release = "https://codeload.github.com/Alehaaaa/mayascripts/legacy.zip/refs/tags/{}".format(
-                    latest_release
-                )
-        return release
-
     def formatPath(self, path):
         import os
 
@@ -48,7 +33,7 @@ class Updater:
         scriptPath = mayaPath + os.sep + cmds.about(version=True) + os.sep + "scripts"
         toolsFolder = scriptPath + os.sep + "aleha_tools" + os.sep
         tmpZipFile = "%s%stmp.zip" % (scriptPath, os.sep)
-        FileUrl = self.get_latest_release()
+        FileUrl = "https://github.com/Alehaaaa/mayascripts/archive/main.zip"
 
         old_files = ["%s_pyside2.py" % tool, "%s_pyside2.pyc" % tool]
 
@@ -123,30 +108,27 @@ class Updater:
             return False
 
         if not find():
-            confirm = cmds.confirmDialog(
-                title="No shelf button found",
-                message="Do you want to add a shelf button for {} to the current shelf?".format(
+            cmds.shelfButton(
+                parent=currentShelf,
+                i=os.path.join(
+                    os.environ["MAYA_APP_DIR"],
+                    cmds.about(version=True),
+                    "scripts",
+                    "aleha_tools",
+                    "icons",
+                    "{}.svg".format(tool),
+                ),
+                label=tool,
+                c="import aleha_tools.{} as {};{}.UI.show_dialog()".format(
+                    tool, tool, tool
+                ),
+                annotation="{} by Aleha".format(tool.title()),
+            )
+            cmds.confirmDialog(
+                title="Added Shelf Button",
+                message="Added a Button for {} to the current shelf.".format(
                     tool.title()
                 ),
-                button=["Yes", "No"],
-                defaultButton="Yes",
-                cancelButton="No",
-                dismissString="No",
+                button=["Ok"],
+                defaultButton="Ok",
             )
-            if confirm == "Yes":
-                cmds.shelfButton(
-                    parent=currentShelf,
-                    i=os.path.join(
-                        os.environ["MAYA_APP_DIR"],
-                        cmds.about(version=True),
-                        "scripts",
-                        "aleha_tools",
-                        "icons",
-                        "{}.svg".format(tool),
-                    ),
-                    label=tool,
-                    c="import aleha_tools.{} as {};{}.UI.show_dialog()".format(
-                        tool, tool, tool
-                    ),
-                    annotation="{} by Aleha".format(tool.title()),
-                )
