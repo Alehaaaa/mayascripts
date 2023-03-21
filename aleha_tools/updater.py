@@ -85,50 +85,50 @@ class Updater:
         if os.path.isfile(tmpZipFile):
             os.remove(tmpZipFile)
 
-        def add_shelf_button(tool):
-            import maya.cmds as cmds
-            import maya.mel as mel
-            import os
+        self.add_shelf_button(tool)
 
-            currentShelf = cmds.tabLayout(mel.eval("$nul=$gShelfTopLevel"), q=1, st=1)
+    def add_shelf_button(self, tool):
+        import maya.cmds as cmds
+        import maya.mel as mel
+        import os
 
-            def find():
-                buttons = cmds.shelfLayout(currentShelf, q=True, ca=True)
-                if buttons is None:
-                    return False
-                else:
-                    for b in buttons:
-                        if (
-                            cmds.shelfButton(b, exists=True)
-                            and cmds.shelfButton(b, q=True, l=True) == tool
-                        ):
-                            return True
+        currentShelf = cmds.tabLayout(mel.eval("$nul=$gShelfTopLevel"), q=1, st=1)
+
+        def find():
+            buttons = cmds.shelfLayout(currentShelf, q=True, ca=True)
+            if buttons is None:
                 return False
+            else:
+                for b in buttons:
+                    if (
+                        cmds.shelfButton(b, exists=True)
+                        and cmds.shelfButton(b, q=True, l=True) == tool
+                    ):
+                        return True
+            return False
 
-            if not find():
-                cmds.shelfButton(
-                    parent=currentShelf,
-                    i=os.path.join(
-                        os.environ["MAYA_APP_DIR"],
-                        cmds.about(version=True),
-                        "scripts",
-                        "aleha_tools",
-                        "icons",
-                        "{}.svg".format(tool),
-                    ),
-                    label=tool,
-                    c="import aleha_tools.{} as {};{}.UI.show_dialog()".format(
-                        tool, tool, tool
-                    ),
-                    annotation="{} by Aleha".format(tool.title()),
-                )
-                cmds.confirmDialog(
-                    title="Added Shelf Button",
-                    message="Added a Button for {} to the current shelf.".format(
-                        tool.title()
-                    ),
-                    button=["Ok"],
-                    defaultButton="Ok",
-                )
-
-        add_shelf_button(tool)
+        if not find():
+            cmds.shelfButton(
+                parent=currentShelf,
+                i=os.path.join(
+                    os.environ["MAYA_APP_DIR"],
+                    cmds.about(version=True),
+                    "scripts",
+                    "aleha_tools",
+                    "icons",
+                    "{}.svg".format(tool),
+                ),
+                label=tool,
+                c="import aleha_tools.{} as {};{}.UI.show_dialog()".format(
+                    tool, tool, tool
+                ),
+                annotation="{} by Aleha".format(tool.title()),
+            )
+            cmds.confirmDialog(
+                title="Added Shelf Button",
+                message="Added a Button for {} to the current shelf.".format(
+                    tool.title()
+                ),
+                button=["Ok"],
+                defaultButton="Ok",
+            )
