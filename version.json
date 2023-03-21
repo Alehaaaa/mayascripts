@@ -42,8 +42,14 @@
         ]
     },
     "cams": {
-        "version": "0.0.91",
+        "version": "0.0.92",
         "changelog": [
+            "=== 0.0.92 ===",
+            "- Settings Saved on Disk.",
+            "- Added more HUDs.",
+            "- Fixed issues.",
+            "- And more...",
+            "",
             "=== 0.0.91 ===",
             "- Duplicate camera.",
             "- Added more HUDs.",

@@ -10,6 +10,7 @@ import aleha_tools.cams as cams
 cams.UI().show(dockable=True)
 
 
+
 """
 
 import random, os
@@ -38,7 +39,7 @@ def delete_workspace_control(control):
 class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     TITLE = "Cams"
-    VERSION = "0.0.91"
+    VERSION = "0.0.92"
     """
     Messages:
     """
@@ -62,7 +63,9 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.setWindowTitle("{} {}".format(self.TITLE, self.VERSION))
         self.setMaximumHeight(50)
 
-        self.data_node()
+        self.get_prefs()
+        self.process_prefs()
+
         self.create_layouts()
         self.create_widgets()
         self.create_buttons()
@@ -80,14 +83,16 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         # Menu bar layout
         menu_bar = QtWidgets.QMenuBar()
 
+        menu_general = menu_bar.addMenu("General")
+        self.reload_btn = menu_general.addAction("Reload UI")
+        self.settings_btn = menu_general.addAction("Camera Defaults")
+
         menu_tools = menu_bar.addMenu("Tools")
-        self.reload_btn = menu_tools.addAction("Reload")
-        self.settings_btn = menu_tools.addAction("Default settings")
-        menu_tools.addSeparator()
         self.multicams = menu_tools.addAction("MultiCams")
         self.add_hud = menu_tools.addAction("HUD Editor")
 
         self.menu_presets = QtWidgets.QMenu("HUD", self)
+        self.menu_presets.aboutToShow.connect(lambda: self.add_presets())
         menu_bar.addMenu(self.menu_presets)
 
         self.add_presets()
@@ -96,7 +101,6 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.updates = menu_extra.addAction("Check for updates")
         menu_extra.addSeparator()
         self.reset_cams_data = menu_extra.addAction("Reset Default Data")
-        self.delete_cams_data = menu_extra.addAction("Remove Default Data")
         menu_extra.addSeparator()
         self.credits = menu_extra.addAction("Credits")
 
@@ -109,17 +113,17 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.main_layout.setMargin(self.__margin__)
 
     def add_presets(self):
+        self.get_prefs()
         self.menu_presets.clear()
 
-        for i in self.get_presets():
+        hud_presets = self.user_prefs.get("hud", [])
+        for i in hud_presets:
             preset = self.menu_presets.addAction(i)
             preset.triggered.connect(
-                lambda preset=self.hud_presets[i]: self.apply_selection(preset)
+                lambda preset=hud_presets[i]: self.apply_selection(preset)
             )
 
         self.menu_presets.addSeparator()
-        clear = self.menu_presets.addAction("Reload")
-        clear.triggered.connect(lambda: self.add_presets())
         clear = self.menu_presets.addAction("Clear HUD")
         clear.triggered.connect(lambda: self.clear_hud())
 
@@ -180,8 +184,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.multicams.triggered.connect(lambda: self.run_tools("multicams", py=False))
         self.add_hud.triggered.connect(lambda: self.run_tools("HUDWindow"))
 
-        self.reset_cams_data.triggered.connect(lambda: self.delete_data(reset=True))
-        self.delete_cams_data.triggered.connect(self.delete_data)
+        self.reset_cams_data.triggered.connect(lambda: self.process_prefs(reset=True))
         self.updates.triggered.connect(self.check_for_updates)
         self.credits.triggered.connect(self.coffee)
 
@@ -216,9 +219,9 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         menu.addSeparator()
         tear_off_copy = menu.addAction("Tear Off Copy")
         tear_off_copy.triggered.connect(lambda cam=cam: self.tear_off_cam(cam))
-        apply_default_action = menu.addAction("Apply Default settings")
-        apply_default_action.triggered.connect(
-            lambda cam=cam: self.apply_default_settings(cam)
+        apply_camera_default = menu.addAction("Apply Camera Defaults")
+        apply_camera_default.triggered.connect(
+            lambda cam=cam: self.apply_camera_default(cam)
         )
 
         if cam != self.default_cam[0]:
@@ -227,26 +230,6 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             delete_action.triggered.connect(lambda cam=cam: self.delete_cam(cam))
 
         menu.exec_(button.mapToGlobal(pos))
-
-    def get_presets(self):
-
-        prefs_dir = os.path.join(
-            os.environ["MAYA_APP_DIR"], cmds.about(v=True), "prefs", "aleha_tools"
-        )
-        prefs_path = os.path.join(prefs_dir, "camsPrefs.aleha")
-
-        presets_list = []
-
-        if os.path.exists(prefs_dir):
-            with open(prefs_path, "r") as prefs_file:
-                user_prefs = eval(prefs_file.read())
-                self.hud_presets = user_prefs["hud"]
-
-            for i in self.hud_presets:
-                presets_list.append(i)
-            return presets_list
-        else:
-            return
 
     def apply_selection(self, settings):
 
@@ -278,18 +261,6 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             if not isinstance(fps, float):
                 fps = fps_map.get(fps, "None")
             return str(fps) + "fps"
-
-        # Command for displaying the camera's focal length (HUD Section 5)
-        def HUD_camera_name():
-            # Get the camera attached to the active model panel
-            try:
-                ModelPane = cmds.getPanel(withFocus=True)
-                Camera = cmds.modelPanel(ModelPane, query=True, camera=True)
-                result = cmds.ls(Camera, long=True)[0][1:]
-                result = result[1:] if result.startswith("|") else result
-            except:
-                result = "None"
-            return result
 
         def HUD_camera_focal_length():
             # Get the camera attached to the active model panel
@@ -345,6 +316,8 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             if selected_command != "None":
                 align = item[0].split("_")[-1]
 
+                command = None
+                preset = None
                 if selected_command == "Current Frame":
                     label = "Frame:"
                     command = HUD_current_frame
@@ -352,7 +325,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                     label = "Total:"
                     command = HUD_total_frames
                 elif selected_command == "Framerate":
-                    label = "Framerate:"
+                    label = ""
                     command = HUD_framerate
                 elif selected_command == "Username":
                     label = "User:"
@@ -360,30 +333,43 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                 elif selected_command == "Scene Name":
                     label = ""
                     command = HUD_get_scene_name
-                elif selected_command == "Camera Name":
-                    label = "Camera:"
-                    command = HUD_camera_name
                 elif selected_command == "Focal Length":
                     label = "Focal Length:"
                     command = HUD_camera_focal_length
                 elif selected_command == "Date":
                     label = ""
                     command = HUD_get_date
+                elif selected_command == "Camera Name":
+                    preset = "cameraNames"
+                elif selected_command == "View Axis":
+                    preset = "viewAxis"
                 else:
                     continue
 
-                cmds.headsUpDisplay(
-                    item[0],
-                    section=item[1],
-                    block=0,
-                    bs=FontSize,
-                    label=label,
-                    dfs=FontSize,
-                    lfs=FontSize,
-                    command=command,
-                    blockAlignment=align,
-                    attachToRefresh=True,
-                )
+                if command:
+                    cmds.headsUpDisplay(
+                        item[0],
+                        section=item[1],
+                        block=0,
+                        bs=FontSize,
+                        label=label,
+                        dfs=FontSize,
+                        lfs=FontSize,
+                        command=command,
+                        blockAlignment=align,
+                        attachToRefresh=True,
+                    )
+                if preset:
+                    cmds.headsUpDisplay(
+                        item[0],
+                        section=item[1],
+                        block=0,
+                        bs=FontSize,
+                        dfs=FontSize,
+                        lfs=FontSize,
+                        preset=preset,
+                        blockAlignment=align,
+                    )
 
         # Set HUD display color to Maya default
         cmds.displayColor("headsUpDisplayLabels", 16, dormant=True)
@@ -394,6 +380,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             cmds.headsUpDisplay(removePosition=[pos, 0])
 
     def settings(self):
+        self.process_prefs(save=False)
 
         if self.settings_window is not None:
             self.settings_window.close()
@@ -425,8 +412,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.settings_window.setLayout(main_layout)
 
         camera_select = QtWidgets.QComboBox()
-        cameras = ["persp", "top", "front", "side"]
-        camera_select.addItems(cameras)
+        camera_select.addItems(["persp", "top", "front", "side"])
         camera_select.setCurrentText(self.default_cam[0])
         camera_select.setEnabled(self.default_cam[1])
 
@@ -612,7 +598,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                 round(x / 255.0, 3) for x in [r, g, b]
             ], gate_mask_color_picker.isEnabled()
 
-            self.data_node(cam, near, far, overscan, mask_op, mask_color)
+            self.process_prefs(cam, near, far, overscan, mask_op, mask_color)
             if self.default_cam[1]:
                 self.default_cam_btn.setText(self.default_cam[0])
             self.settings_window.close()
@@ -623,7 +609,58 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
     Create functions
     """
 
-    def data_node(
+    def get_prefs(self):
+
+        prefs_dir = os.path.join(
+            os.environ["MAYA_APP_DIR"], cmds.about(v=True), "prefs", "aleha_tools"
+        )
+        if not os.path.exists(prefs_dir):
+            os.makedirs(prefs_dir)
+
+        self.prefs_path = os.path.join(prefs_dir, "camsPrefs.aleha")
+
+        if os.path.exists(self.prefs_path):
+            with open(self.prefs_path, "r") as prefs_file:
+                self.user_prefs = eval(prefs_file.read())
+                self.cams_prefs = self.user_prefs.get("default_settings", None)
+                if not self.cams_prefs:
+                    self.save_prefs()
+
+        else:
+            self.user_prefs = {}
+            self.save_prefs()
+
+    def save_prefs(self, cam_prefs=None):
+        # Default settings
+        self.initial_settings = {
+            "camera": ("persp", True),
+            "overscan": (1.0, True),
+            "near_clip": (1.0, True),
+            "far_clip": (10000.0, True),
+            "display_resolution": (1, True),
+            "mask_opacity": (1.0, True),
+            "mask_color": ([0.0, 0.0, 0.0], True),
+            "skip_update": False,
+        }
+        if not cam_prefs:
+            cam_prefs = self.initial_settings
+
+        if not self.user_prefs.get("hud", None):
+            default_hud = {
+                "bmc": "Camera Name",
+                "trc": "None",
+                "tlc": "None",
+                "tmc": "None",
+                "brc": "None",
+                "blc": "Axis View",
+            }
+            self.user_prefs["hud"] = {"Default": default_hud}
+
+        with open(self.prefs_path, "w") as prefs_file:
+            self.cams_prefs = self.user_prefs["default_settings"] = cam_prefs
+            prefs_file.write(str(self.user_prefs))
+
+    def process_prefs(
         self,
         cam=False,
         near=False,
@@ -632,68 +669,60 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         mask_op=False,
         mask_color=False,
         skip_update=False,
+        reset=False,
+        save=True,
     ):
-        self.storeNode = "Cams_StoreNode"
 
-        # Remove old transformNode
-        oldNode = "camsData"
-        old_data = None
+        self.old_Node = "Cams_StoreNode"
 
-        if cmds.objExists(oldNode):
-            old_data = cmds.getAttr(oldNode + ".data")
-            cmds.delete(oldNode)
+        if cmds.objExists(self.old_Node):
+            old_Value = cmds.getAttr(self.old_Node + ".data")
+            settings = eval(old_Value)
+            # Convert old transformNode
+            for i in self.initial_settings:
+                if i == "skip_update":
+                    continue
+                value = settings[i]
+                if type(value) != tuple:
+                    settings[i] = (value, True)
+                else:
+                    break
 
-        if not cmds.objExists(self.storeNode):
-            cmds.createNode("mute", name=self.storeNode)
-            cmds.addAttr(self.storeNode, longName="data", dataType="string")
+            self.save_prefs(cam_prefs=settings)
 
-            # Apply default settings
-            default_settings = {
-                "camera": ("persp", True),
-                "overscan": (1.0, True),
-                "near_clip": (1.0, True),
-                "far_clip": (10000.0, True),
-                "display_resolution": (1, True),
-                "mask_opacity": (1.0, True),
-                "mask_color": ([0.0, 0.0, 0.0], True),
-                "skip_update": False,
-            }
-            if old_data:
-                cmds.setAttr(self.storeNode + ".data", old_data, type="string")
-            else:
-                cmds.setAttr(
-                    self.storeNode + ".data", str(default_settings), type="string"
-                )
-
-        attrValue = cmds.getAttr(self.storeNode + ".data")
-        nodeData = eval(attrValue)
+            cmds.delete(self.old_Node)
 
         # Set the value of the attribute to a dictionary of multiple variable values
         if cam:
-            nodeData["camera"] = cam
+            self.cams_prefs["camera"] = cam
         if near:
-            nodeData["near_clip"] = near
+            self.cams_prefs["near_clip"] = near
         if far:
-            nodeData["far_clip"] = far
+            self.cams_prefs["far_clip"] = far
         if overscan:
-            nodeData["overscan"] = overscan
+            self.cams_prefs["overscan"] = overscan
         if mask_op:
-            nodeData["mask_opacity"] = mask_op
+            self.cams_prefs["mask_opacity"] = mask_op
         if mask_color:
-            nodeData["mask_color"] = mask_color
+            self.cams_prefs["mask_color"] = mask_color
         if skip_update:
-            nodeData["skip_update"] = skip_update
+            self.cams_prefs["skip_update"] = skip_update
 
-        self.default_cam = nodeData["camera"]
-        self.default_overscan = nodeData["overscan"]
-        self.default_near_clip_plane = nodeData["near_clip"]
-        self.default_far_clip_plane = nodeData["far_clip"]
-        self.default_resolution = nodeData["display_resolution"]
-        self.default_gate_mask_opacity = nodeData["mask_opacity"]
-        self.default_gate_mask_color = nodeData["mask_color"]
-        self.skip_update = nodeData["skip_update"]
+        self.default_cam = self.cams_prefs["camera"]
+        self.default_overscan = self.cams_prefs["overscan"]
+        self.default_near_clip_plane = self.cams_prefs["near_clip"]
+        self.default_far_clip_plane = self.cams_prefs["far_clip"]
+        self.default_resolution = self.cams_prefs["display_resolution"]
+        self.default_gate_mask_opacity = self.cams_prefs["mask_opacity"]
+        self.default_gate_mask_color = self.cams_prefs["mask_color"]
+        self.skip_update = self.cams_prefs["skip_update"]
 
-        cmds.setAttr(self.storeNode + ".data", str(nodeData), type="string")
+        if save:
+
+            if not reset:
+                self.save_prefs(cam_prefs=self.cams_prefs)
+            else:
+                self.save_prefs()
 
     def look_thru(self, cam):
         cmds.lookThru(cmds.getPanel(wf=True), cam)
@@ -726,7 +755,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
         mel.eval("tearOffCopyItemCmd modelPanel " + getPanelFromCamera(cam))
 
-    def apply_default_settings(self, cam):
+    def apply_camera_default(self, cam):
         parameters = {
             "overscan": self.default_overscan,
             "ncp": self.default_near_clip_plane,
@@ -738,13 +767,17 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
         for i, v in parameters.items():
             try:
-                if i != "displayGateMaskColor":
+                if i == "displayResolution":
                     if v[1]:
                         cmds.setAttr("{}.{}".format(cam, i), v[0])
-                else:
+                        cmds.setAttr("{}.displayGateMask".format(cam), v[0])
+                elif i == "displayGateMaskColor":
                     if v[1]:
                         r, g, b = v[0]
                         cmds.setAttr("{}.{}".format(cam, i), r, g, b, type="double3")
+                else:
+                    if v[1]:
+                        cmds.setAttr("{}.{}".format(cam, i), v[0])
             except:
                 pass
 
@@ -849,14 +882,6 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
     def getcolor(self):
         return [str(int(random.uniform(200 * 0.7, 200 * 0.9))) for i in range(3)]
 
-    def delete_data(self, reset=False):
-        try:
-            cmds.delete(self.storeNode)
-        except:
-            pass
-        if reset:
-            self.data_node(skip_update=self.skip_update)
-
     # Open Tools
     def run_tools(self, tool, py=True):
         if not py:
@@ -952,7 +977,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                 )
 
             elif update_available == "Skip":
-                self.data_node(skip_update=1)
+                self.process_prefs(skip_update=1)
         else:
             if warning:
                 om.MGlobal.displayWarning("All up-to-date.")

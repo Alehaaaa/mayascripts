@@ -1,7 +1,5 @@
-import datetime, os
-import maya.cmds as cmds
-import maya.OpenMayaUI as omui
-from PySide2 import QtCore, QtGui, QtWidgets
+import maya.cmds as cmds, maya.OpenMayaUI as omui, os
+from PySide2 import QtCore, QtWidgets
 from shiboken2 import wrapInstance
 
 
@@ -31,11 +29,7 @@ class HUDWindow(QtWidgets.QMainWindow):
         self.setWindowTitle("HUD Editor")
         self.setFixedSize(370, 260)
 
-        """try:"""
         self.get_prefs()
-        """except:
-            cmds.warning("Error while reading the preferences file at %s"%self.prefs_path)
-            return"""
 
         # Menu bar layout
         menu_bar = QtWidgets.QMenuBar()
@@ -97,6 +91,7 @@ class HUDWindow(QtWidgets.QMainWindow):
             "Username",
             "Camera Name",
             "Focal Length",
+            "View Axis",
             "Date",
         ]
 
@@ -173,37 +168,17 @@ class HUDWindow(QtWidgets.QMainWindow):
 
     def get_prefs(self):
 
-        prefs_dir = os.path.join(
-            os.environ["MAYA_APP_DIR"], cmds.about(v=True), "prefs", "aleha_tools"
+        self.prefs_path = os.path.join(
+            os.environ["MAYA_APP_DIR"],
+            cmds.about(v=True),
+            "prefs",
+            "aleha_tools",
+            "camsPrefs.aleha",
         )
-        if not os.path.exists(prefs_dir):
-            os.makedirs(prefs_dir)
 
-        self.prefs_path = os.path.join(prefs_dir, "camsPrefs.aleha")
-
-        self.default_prefs = {
-            "bmc": "None",
-            "trc": "None",
-            "tlc": "None",
-            "tmc": "None",
-            "brc": "None",
-            "blc": "None",
-        }
-        if not os.path.exists(self.prefs_path):
-
-            with open(self.prefs_path, "w+") as prefs_file:
-                # Default HUD settings
-                default_hud = {"hud": {"Default": self.default_prefs}}
-
-                prefs_file.write(str(default_hud))
-
-                self.user_prefs = default_hud
-                self.hud_presets = self.user_prefs["hud"]
-
-        else:
-            with open(self.prefs_path, "r") as prefs_file:
-                self.user_prefs = eval(prefs_file.read())
-                self.hud_presets = self.user_prefs["hud"]
+        with open(self.prefs_path, "r") as prefs_file:
+            self.user_prefs = eval(prefs_file.read())
+            self.hud_presets = self.user_prefs["hud"]
 
     def save_prefs(self):
         if (
