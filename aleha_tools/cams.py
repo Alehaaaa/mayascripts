@@ -610,6 +610,17 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
     """
 
     def get_prefs(self):
+        # Default settings
+        self.initial_settings = {
+            "camera": ("persp", True),
+            "overscan": (1.0, True),
+            "near_clip": (1.0, True),
+            "far_clip": (10000.0, True),
+            "display_resolution": (1, True),
+            "mask_opacity": (1.0, True),
+            "mask_color": ([0.0, 0.0, 0.0], True),
+            "skip_update": False,
+        }
 
         prefs_dir = os.path.join(
             os.environ["MAYA_APP_DIR"], cmds.about(v=True), "prefs", "aleha_tools"
@@ -631,17 +642,6 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             self.save_prefs()
 
     def save_prefs(self, cam_prefs=None):
-        # Default settings
-        self.initial_settings = {
-            "camera": ("persp", True),
-            "overscan": (1.0, True),
-            "near_clip": (1.0, True),
-            "far_clip": (10000.0, True),
-            "display_resolution": (1, True),
-            "mask_opacity": (1.0, True),
-            "mask_color": ([0.0, 0.0, 0.0], True),
-            "skip_update": False,
-        }
         if not cam_prefs:
             cam_prefs = self.initial_settings
 
