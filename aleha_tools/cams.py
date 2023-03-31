@@ -39,7 +39,7 @@ def delete_workspace_control(control):
 class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     TITLE = "Cams"
-    VERSION = "0.0.92"
+    VERSION = "0.0.93"
     """
     Messages:
     """
@@ -124,6 +124,11 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             )
 
         self.menu_presets.addSeparator()
+        self.HUD_checkbox = self.menu_presets.addAction("HUD Display")
+        self.HUD_checkbox.setCheckable(True)
+        HUD_checkbox_state = self.HUD_display_cam()
+        self.HUD_checkbox.setChecked(HUD_checkbox_state)
+        self.HUD_checkbox.triggered.connect(lambda: self.HUD_display_cam(change=True))
         clear = self.menu_presets.addAction("Clear HUD")
         clear.triggered.connect(lambda: self.clear_hud())
 
@@ -611,16 +616,6 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     def get_prefs(self):
         # Default settings
-        self.initial_settings = {
-            "camera": ("persp", True),
-            "overscan": (1.0, True),
-            "near_clip": (1.0, True),
-            "far_clip": (10000.0, True),
-            "display_resolution": (1, True),
-            "mask_opacity": (1.0, True),
-            "mask_color": ([0.0, 0.0, 0.0], True),
-            "skip_update": False,
-        }
 
         prefs_dir = os.path.join(
             os.environ["MAYA_APP_DIR"], cmds.about(v=True), "prefs", "aleha_tools"
@@ -674,6 +669,16 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
     ):
 
         self.old_Node = "Cams_StoreNode"
+        self.initial_settings = {
+            "camera": ("persp", True),
+            "overscan": (1.0, True),
+            "near_clip": (1.0, True),
+            "far_clip": (10000.0, True),
+            "display_resolution": (1, True),
+            "mask_opacity": (1.0, True),
+            "mask_color": ([0.0, 0.0, 0.0], True),
+            "skip_update": False,
+        }
 
         if cmds.objExists(self.old_Node):
             old_Value = cmds.getAttr(self.old_Node + ".data")
@@ -788,6 +793,34 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         cmds.setAttr(
             "{}.displayGateMask".format(cam), self.resolution_checkbox.isChecked()
         )
+
+    def HUD_display_cam(self, change=False):
+        heads = [
+            "top_left",
+            "top_center",
+            "top_right",
+            "bottom_left",
+            "bottom_center",
+            "bottom_right",
+        ]
+        true_false = True
+        for i in heads:
+            try:
+                state = cmds.headsUpDisplay(i, q=True, visible=True)
+                true_false = state
+                break
+            except:
+                true_false = False
+                pass
+        if change:
+            for i in heads:
+                try:
+                    cmds.headsUpDisplay(i, e=True, visible=not true_false)
+                except:
+                    pass
+
+            true_false = not true_false
+        return true_false
 
     def duplicate_cam(self, cam):
         cmds.duplicate(cam)
