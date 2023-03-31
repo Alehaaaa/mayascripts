@@ -42,8 +42,12 @@
         ]
     },
     "cams": {
-        "version": "0.0.92",
+        "version": "0.0.93",
         "changelog": [
+            "=== 0.0.93 ===",
+            "- Enable/disable HUD.",
+            "- Fixed issues.",
+            "",
             "=== 0.0.92 ===",
             "- Settings Saved on Disk.",
             "- Added more HUDs.",
