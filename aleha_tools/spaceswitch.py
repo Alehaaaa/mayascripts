@@ -457,7 +457,7 @@ class UI(QtWidgets.QDialog):
 
                 self.deleteLater()
                 cmds.evalDeferred(
-                    "import aleha_tools.{} as spaceswitch;reload(spaceswitch);spaceswitch.UI().show(dockable=True);".format(
+                    "import aleha_tools.{} as spaceswitch;reload(spaceswitch);spaceswitch.UI.show_dialog();".format(
                         script_name
                     )
                 )
