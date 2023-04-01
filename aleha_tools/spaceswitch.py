@@ -27,7 +27,7 @@ def MayaWindow():
 class UI(QtWidgets.QDialog):
 
     TITLE = "SpaceSwitch"
-    VERSION = "0.0.7"
+    VERSION = "0.0.71"
     """
     Messages:
     """
@@ -135,7 +135,12 @@ class UI(QtWidgets.QDialog):
         self.credits.triggered.connect(self.coffee)
 
     def showEvent(self, event):
-        self.idx = om.MEventMessage.addEventCallback("SelectionChanged", self.refresh)
+        self.SelectionChanged = om.MEventMessage.addEventCallback(
+            "SelectionChanged", self.refresh
+        )
+        self.timeChanged = om.MEventMessage.addEventCallback(
+            "timeChanged", self.refresh
+        )
 
     def set_namespaces(self):
         self.namespaces = self.toggle_namespaces.isChecked()
@@ -262,7 +267,9 @@ class UI(QtWidgets.QDialog):
         enumOptions = cmds.attributeQuery(enum_attr, node=sel, listEnum=True)[0].split(
             ":"
         )
-        currentValue = cmds.getAttr(("{}.{}").format(sel, enum_attr))
+        currentValue = cmds.getAttr(
+            ("{}.{}").format(sel, enum_attr), time=cmds.currentTime(q=1)
+        )
         self.combobox.clear()
         for i, op in enumerate(enumOptions):
             self.combobox.addItem(op)
@@ -475,7 +482,8 @@ class UI(QtWidgets.QDialog):
 
     def closeEvent(self, event):
         try:
-            om.MMessage.removeCallback(self.idx)
+            om.MMessage.removeCallback(self.SelectionChanged)
+            om.MMessage.removeCallback(self.timeChanged)
         except:
             pass
 

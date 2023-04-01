@@ -87,8 +87,11 @@
         ]
     },
     "spaceswitch": {
-        "version": "0.0.7",
+        "version": "0.0.71",
         "changelog": [
+            "=== 0.0.71 ===",
+            "- Update UI on frame change.",
+            "",
             "=== 0.0.7 ===",
             "- Better organization."
         ]
