@@ -464,7 +464,12 @@ class UI(QtWidgets.QDialog):
 
                 import aleha_tools.updater as updater
 
-                reload(updater)
+                if get_python_version() < 3:
+                    reload(updater)
+
+                else:
+                    import imp
+                    imp.reload(updater)
 
                 updater.Updater().install(script_name)
 
