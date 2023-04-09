@@ -1002,10 +1002,12 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
                 if get_python_version() < 3:
                     reload(updater)
+                    reload_code = "reload(cams)"
 
                 else:
                     import imp
                     imp.reload(updater)
+                    reload_code = "import imp;imp.reload(cams)"
 
 
                 updater.Updater().install(script_name)
@@ -1029,8 +1031,8 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
                 self.deleteLater()
                 cmds.evalDeferred(
-                    "import aleha_tools.{} as cams;reload(cams);cams.UI().show(dockable=True);".format(
-                        script_name
+                    "import aleha_tools.{} as cams;{};cams.UI().show(dockable=True);".format(
+                        script_name,reload_code
                     )
                 )
 

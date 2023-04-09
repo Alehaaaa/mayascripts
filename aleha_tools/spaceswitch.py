@@ -466,17 +466,19 @@ class UI(QtWidgets.QDialog):
 
                 if get_python_version() < 3:
                     reload(updater)
+                    reload_code = "reload(spaceswitch)"
 
                 else:
                     import imp
                     imp.reload(updater)
+                    reload_code = "import imp;imp.reload(spaceswitch)"
 
                 updater.Updater().install(script_name)
 
                 self.deleteLater()
                 cmds.evalDeferred(
-                    "import aleha_tools.{} as spaceswitch;reload(spaceswitch);spaceswitch.UI.show_dialog();".format(
-                        script_name
+                    "import aleha_tools.{} as spaceswitch;{};spaceswitch.UI.show_dialog();".format(
+                        script_name,reload_code
                     )
                 )
         else:
