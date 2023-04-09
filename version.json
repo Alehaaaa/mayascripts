@@ -1,7 +1,10 @@
 {
     "cams_free": {
-        "version": "0.0.5",
+        "version": "0.0.51",
         "changelog": [
+            "=== 0.0.51 ===",
+            "- Minor improvements.",
+            "",
             "=== 0.0.5 ===",
             "- Fixed issues.",
             "",
@@ -42,8 +45,12 @@
         ]
     },
     "cams": {
-        "version": "0.0.93",
+        "version": "0.0.94",
         "changelog": [
+            "=== 0.0.94 ===",
+            "- Works with Maya 2022+",
+            "- Fixed bugs.",
+            "",
             "=== 0.0.93 ===",
             "- Enable/disable HUD.",
             "- Fixed issues.",
@@ -87,8 +94,11 @@
         ]
     },
     "spaceswitch": {
-        "version": "0.0.71",
+        "version": "0.0.72",
         "changelog": [
+            "=== 0.0.72 ===",
+            "- Works with Maya 2022+",
+            "",
             "=== 0.0.71 ===",
             "- Update UI on frame change.",
             "",

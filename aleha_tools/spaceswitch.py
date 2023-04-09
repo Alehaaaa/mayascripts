@@ -16,18 +16,26 @@ spaceswitch.UI.show_dialog()
 
 from PySide2 import QtWidgets, QtGui, QtCore
 from shiboken2 import wrapInstance
-import maya.OpenMayaUI as omui, maya.OpenMaya as om, maya.cmds as cmds, maya.mel as mel, base64
+import maya.OpenMayaUI as omui, maya.OpenMaya as om, maya.cmds as cmds, maya.mel as mel, base64, sys
 
 
-def MayaWindow():
-    pointer = omui.MQtUtil.mainWindow()
-    return wrapInstance(long(pointer), QtWidgets.QMainWindow)
+def get_python_version():
+    return sys.version_info.major
+
+
+def get_maya_win():
+    win_ptr = omui.MQtUtil.mainWindow()
+    if get_python_version() < 3:
+        main = wrapInstance(long(win_ptr), QtWidgets.QMainWindow)
+    else:
+        main = wrapInstance(int(win_ptr), QtWidgets.QMainWindow)
+    return main
 
 
 class UI(QtWidgets.QDialog):
 
     TITLE = "SpaceSwitch"
-    VERSION = "0.0.71"
+    VERSION = "0.0.72"
     """
     Messages:
     """
@@ -48,7 +56,7 @@ class UI(QtWidgets.QDialog):
             cls.dlg_instance.activateWindow()
             cls.dlg_instance.refresh()
 
-    def __init__(self, parent=MayaWindow()):
+    def __init__(self, parent=get_maya_win()):
         super(UI, self).__init__(parent=parent)
         self.namespaces = True
         self.setWindowTitle(("{} {}").format(UI.TITLE, UI.VERSION))
@@ -400,14 +408,19 @@ class UI(QtWidgets.QDialog):
 
     # Check for Updates
     def check_for_updates(self, warning=True, *args):
-        import json, urllib2
+        import json
 
         script_name = self.TITLE.lower()
 
         url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/version.json"
 
+        if get_python_version() < 3:
+            import urllib2.urlopen as urlopen
+        else:
+            from urllib.request import urlopen
+
         try:
-            response = urllib2.urlopen(url, timeout=1)
+            response = urlopen(url, timeout=1)
         except:
             if warning:
                 om.MGlobal.displayWarning(UI.NO_INTERNET)
@@ -475,8 +488,8 @@ class UI(QtWidgets.QDialog):
         aleha_credits.setIconPixmap(pixmap)
         aleha_credits.setWindowTitle("Buy me a coffee!")
         aleha_credits.setText(
-            'Created by @Aleha - <a href=https://www.instagram.com/alejandro_anim><font color="white">Instagram</a><br><br>If you liked this set of tools,<br>you can send me some love!'
-        )
+            'Created by @Aleha - <a href=https://www.instagram.com/alejandro_anim><font color="white">Instagram</a><br>My website - <a href=https://alehaaaa.github.io><font color="white">alehaaaa.github.io</a><br><br>If you liked this set of tools,<br>you can send me some love!'
+            )
         aleha_credits.setFixedSize(400, 300)
         aleha_credits.exec_()
 

@@ -1,5 +1,4 @@
-import maya.cmds as cmds
-import urllib2, random
+import maya.cmds as cmds, random
 
 """
 MultiCams Tool
@@ -16,14 +15,12 @@ class multicams:
         self.__width__ = 90
 
         # Create window
-        if cmds.window(multicams.TITLE, exists=True):
-            cmds.deleteUI(multicams.TITLE)
+        if cmds.window(self.TITLE, exists=True):
+            cmds.deleteUI(self.TITLE)
         try:
-            window = cmds.window(
-                multicams.TITLE, menuBar=True, rtf=True, tlb=True, s=False
-            )
+            window = cmds.window(self.TITLE, menuBar=True, rtf=True, tlb=True, s=False)
         except:
-            window = cmds.window(multicams.TITLE, menuBar=True, rtf=True, s=False)
+            window = cmds.window(self.TITLE, menuBar=True, rtf=True, s=False)
 
         cmds.columnLayout()
         cmds.separator(h=self.__margin__, st="none")

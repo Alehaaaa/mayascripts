@@ -13,7 +13,7 @@ cams.UI().show(dockable=True)
 
 """
 
-import random, os
+import random, os, sys
 
 from PySide2 import QtWidgets, QtGui, QtCore
 from shiboken2 import wrapInstance
@@ -25,9 +25,17 @@ import maya.cmds as cmds
 import maya.mel as mel
 
 
+def get_python_version():
+    return sys.version_info.major
+
+
 def get_maya_win():
     win_ptr = omui.MQtUtil.mainWindow()
-    return wrapInstance(long(win_ptr), QtWidgets.QMainWindow)
+    if get_python_version() < 3:
+        main = wrapInstance(long(win_ptr), QtWidgets.QMainWindow)
+    else:
+        main = wrapInstance(int(win_ptr), QtWidgets.QMainWindow)
+    return main
 
 
 def delete_workspace_control(control):
@@ -39,7 +47,7 @@ def delete_workspace_control(control):
 class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     TITLE = "Cams"
-    VERSION = "0.0.93"
+    VERSION = "0.0.94"
     """
     Messages:
     """
@@ -614,8 +622,21 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
     Create functions
     """
 
-    def get_prefs(self):
+    def initial_settings(self):
         # Default settings
+        initial_settings = {
+            "camera": ("persp", True),
+            "overscan": (1.0, True),
+            "near_clip": (1.0, True),
+            "far_clip": (10000.0, True),
+            "display_resolution": (1, True),
+            "mask_opacity": (1.0, True),
+            "mask_color": ([0.0, 0.0, 0.0], True),
+            "skip_update": False,
+        }
+        return initial_settings
+
+    def get_prefs(self):
 
         prefs_dir = os.path.join(
             os.environ["MAYA_APP_DIR"], cmds.about(v=True), "prefs", "aleha_tools"
@@ -638,7 +659,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     def save_prefs(self, cam_prefs=None):
         if not cam_prefs:
-            cam_prefs = self.initial_settings
+            cam_prefs = self.initial_settings()
 
         if not self.user_prefs.get("hud", None):
             default_hud = {
@@ -669,22 +690,12 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
     ):
 
         self.old_Node = "Cams_StoreNode"
-        self.initial_settings = {
-            "camera": ("persp", True),
-            "overscan": (1.0, True),
-            "near_clip": (1.0, True),
-            "far_clip": (10000.0, True),
-            "display_resolution": (1, True),
-            "mask_opacity": (1.0, True),
-            "mask_color": ([0.0, 0.0, 0.0], True),
-            "skip_update": False,
-        }
 
         if cmds.objExists(self.old_Node):
             old_Value = cmds.getAttr(self.old_Node + ".data")
             settings = eval(old_Value)
             # Convert old transformNode
-            for i in self.initial_settings:
+            for i in self.initial_settings():
                 if i == "skip_update":
                     continue
                 value = settings[i]
@@ -917,10 +928,14 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     # Open Tools
     def run_tools(self, tool, py=True):
-        if not py:
-            extra = "reload(tool);tool.{}();".format(tool)
+        if get_python_version() < 3:
+            reload_code = "reload(tool)"
         else:
-            extra = "reload(tool);tool.{}.show_dialog()".format(tool)
+            reload_code = "import imp;imp.reload(tool)"
+        if not py:
+            extra = "{};tool.{}();".format(reload_code, tool)
+        else:
+            extra = "{};tool.{}.show_dialog()".format(reload_code, tool)
 
         exec("import aleha_tools.cams_tools.{} as tool;{}".format(tool, extra))
 
@@ -930,26 +945,30 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     # Check for Updates
     def check_for_updates(self, warning=True, *args):
-        import json, urllib2
+        import json
 
         script_name = self.TITLE.lower()
 
         url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/version.json"
 
+        if get_python_version() < 3:
+            import urllib2.urlopen as urlopen
+        else:
+            from urllib.request import urlopen
+
         try:
-            response = urllib2.urlopen(url, timeout=1)
+            response = urlopen(url, timeout=1)
         except:
             if warning:
                 om.MGlobal.displayWarning(UI.NO_INTERNET)
             return
         content = response.read()
 
-        if content:
-            data = json.loads(content)
-            script = data[script_name]
+        data = json.loads(content)
+        script = data[script_name]
 
-            version = str(script["version"])
-            changelog = script["changelog"]
+        version = str(script["version"])
+        changelog = script["changelog"]
 
         def convert_list_to_string():
             result, sublst = [], []
@@ -962,7 +981,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                         sublst = []
             if sublst:
                 result.append(sublst)
-            result = result[:4]
+            result = result[:3]
             result.append(["== And more =="])
             return "\n\n".join(["\n".join(x) for x in result])
 
@@ -1030,8 +1049,8 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
         aleha_credits.setWindowTitle("Buy me a coffee!")
         aleha_credits.setText(
-            'Created by @Aleha - <a href=https://www.instagram.com/alejandro_anim><font color="white">Instagram</a><br><br>If you liked this set of tools,<br>you can send me some love!'
-        )
+            'Created by @Aleha - <a href=https://www.instagram.com/alejandro_anim><font color="white">Instagram</a><br>My website - <a href=https://alehaaaa.github.io><font color="white">alehaaaa.github.io</a><br><br>If you liked this set of tools,<br>you can send me some love!'
+            )
         aleha_credits.setFixedSize(400, 300)
         aleha_credits.exec_()
 

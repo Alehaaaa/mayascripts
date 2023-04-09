@@ -21,7 +21,7 @@ import random
 class UI:
 
     TITLE = "Cams Free"
-    VERSION = "0.0.5"
+    VERSION = "0.0.51"
     """
     Error Messages:
     """
@@ -270,13 +270,13 @@ class UI:
             message="Created by @Aleha\nIf you liked it, you can send me some love:",
             messageAlign="center",
             bgc=self.getcolor(),
-            button=["Instagram", "Close"],
-            defaultButton="Instagram",
+            button=["My Website", "Close"],
+            defaultButton="My Website",
             cancelButton="Close",
             dismissString="Close",
         )
-        if coffee == "Instagram":
-            cmds.showHelp("https://www.instagram.com/alejandro_anim/", absolute=True)
+        if coffee == "My Website":
+            cmds.showHelp("https://alehaaaa.github.io/", absolute=True)
 
     def getcolor(self):
         return [round(random.uniform(0.525, 0.750), 3) for i in range(3)]

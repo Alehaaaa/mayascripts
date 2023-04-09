@@ -8,12 +8,13 @@ class Updater:
 
     def download(self, downloadUrl, saveFile):
         import maya.cmds as cmds
-        import urllib2
 
         try:
-            response = urllib2.urlopen(downloadUrl, timeout=60)
+            import urllib2.urlopen as urlopen
         except:
-            pass
+            from urllib.request import urlopen
+
+        response = urlopen(downloadUrl, timeout=60)
 
         if response is None:
             cmds.warning("Error trying to install.")

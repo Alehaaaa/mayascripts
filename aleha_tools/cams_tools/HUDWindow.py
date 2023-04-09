@@ -1,11 +1,19 @@
-import maya.cmds as cmds, maya.OpenMayaUI as omui, os
+import maya.cmds as cmds, maya.OpenMayaUI as omui, os, sys
 from PySide2 import QtCore, QtWidgets
 from shiboken2 import wrapInstance
 
 
+def get_python_version():
+    return sys.version_info.major
+
+
 def maya_main_window():
-    main_window_ptr = omui.MQtUtil.mainWindow()
-    return wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
+    win_ptr = omui.MQtUtil.mainWindow()
+    if get_python_version() < 3:
+        main = wrapInstance(long(win_ptr), QtWidgets.QMainWindow)
+    else:
+        main = wrapInstance(int(win_ptr), QtWidgets.QMainWindow)
+    return main
 
 
 class HUDWindow(QtWidgets.QMainWindow):
@@ -309,7 +317,7 @@ class HUDWindow(QtWidgets.QMainWindow):
                                 break
                     self.preset_title.clearFocus()
                 else:
-                    preset = self.hud_presets.keys()[0]
+                    preset = (list(self.hud_presets.keys()))[0]
                     self.preset_title.clearFocus()
 
                 for combo in self.all_combos:
