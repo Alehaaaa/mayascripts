@@ -10,7 +10,7 @@ class Updater:
         import maya.cmds as cmds
 
         try:
-            import urllib2.urlopen as urlopen
+            from urllib2 import urlopen
         except:
             from urllib.request import urlopen
 

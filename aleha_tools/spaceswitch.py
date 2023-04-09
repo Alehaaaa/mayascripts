@@ -415,7 +415,7 @@ class UI(QtWidgets.QDialog):
         url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/version.json"
 
         if get_python_version() < 3:
-            import urllib2.urlopen as urlopen
+            from urllib2 import urlopen
         else:
             from urllib.request import urlopen
 
