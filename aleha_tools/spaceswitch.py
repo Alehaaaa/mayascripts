@@ -51,10 +51,13 @@ class UI(QtWidgets.QDialog):
         if cls.dlg_instance.isHidden():
             cls.dlg_instance.show()
             cls.dlg_instance.refresh()
+            cls.dlg_instance.add_callbacks()
+            
         else:
             cls.dlg_instance.raise_()
             cls.dlg_instance.activateWindow()
             cls.dlg_instance.refresh()
+            cls.dlg_instance.add_callbacks()
 
     def __init__(self, parent=get_maya_win()):
         super(UI, self).__init__(parent=parent)
@@ -68,10 +71,6 @@ class UI(QtWidgets.QDialog):
         self.create_connections()
 
         self.check_for_updates(warning=False)
-
-        # Add a callback for the Maya SceneOpened event
-        self.sceneOpened = om.MSceneMessage.addCallback(
-            om.MSceneMessage.kAfterOpen, self.on_scene_opened)
 
     def create_layouts(self):
         self.main_layout = QtWidgets.QVBoxLayout(self)
@@ -146,7 +145,10 @@ class UI(QtWidgets.QDialog):
         self.updates.triggered.connect(self.check_for_updates)
         self.credits.triggered.connect(self.coffee)
 
-    def showEvent(self, event):
+    def add_callbacks(self):
+        # Add a callback for the Maya SceneOpened event
+        self.sceneOpened = om.MSceneMessage.addCallback(
+            om.MSceneMessage.kAfterOpen, self.on_scene_opened)
         self.SelectionChanged = om.MEventMessage.addEventCallback(
             "SelectionChanged", self.refresh
         )
@@ -479,6 +481,7 @@ class UI(QtWidgets.QDialog):
 
                 updater.Updater().install(script_name)
 
+                self.remove_callbacks()
                 self.deleteLater()
                 cmds.evalDeferred(
                     "import aleha_tools.{} as spaceswitch;{};spaceswitch.UI.show_dialog();".format(
@@ -508,7 +511,7 @@ class UI(QtWidgets.QDialog):
         # Close the dialog when a new scene is opened in Maya to avoid callback errors
         self.close()
 
-    def closeEvent(self, event):
+    def remove_callbacks(self):
         try:
             om.MSceneMessage.removeCallback(self.sceneOpened)
         except:
@@ -521,6 +524,10 @@ class UI(QtWidgets.QDialog):
             om.MMessage.removeCallback(self.timeChanged)
         except:
             print("Error removing timeChanged Callback")
+
+
+    def closeEvent(self, event):
+        self.remove_callbacks()
         event.accept()
 
 
