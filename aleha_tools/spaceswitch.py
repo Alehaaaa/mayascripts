@@ -35,7 +35,7 @@ def get_maya_win():
 class UI(QtWidgets.QDialog):
 
     TITLE = "SpaceSwitch"
-    VERSION = "0.0.72"
+    VERSION = "0.0.73"
     """
     Messages:
     """
@@ -68,6 +68,10 @@ class UI(QtWidgets.QDialog):
         self.create_connections()
 
         self.check_for_updates(warning=False)
+
+        # Add a callback for the Maya SceneOpened event
+        self.sceneOpened = om.MSceneMessage.addCallback(
+            om.MSceneMessage.kAfterOpen, self.on_scene_opened)
 
     def create_layouts(self):
         self.main_layout = QtWidgets.QVBoxLayout(self)
@@ -500,12 +504,25 @@ class UI(QtWidgets.QDialog):
         aleha_credits.setFixedSize(400, 300)
         aleha_credits.exec_()
 
+    def on_scene_opened(self, *args, **kwargs):
+        # Close the dialog when a new scene is opened in Maya to avoid callback errors
+        self.close()
+
     def closeEvent(self, event):
         try:
+            om.MSceneMessage.removeCallback(self.sceneOpened)
+        except:
+            print("Error removing sceneOpened Callback")
+        try:
             om.MMessage.removeCallback(self.SelectionChanged)
+        except:
+            print("Error removing SelectionChanged Callback")
+        try:
             om.MMessage.removeCallback(self.timeChanged)
         except:
-            pass
+            print("Error removing timeChanged Callback")
+        event.accept()
+
 
 
 if __name__ == "__main__":

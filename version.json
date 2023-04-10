@@ -1,4 +1,52 @@
 {
+    "cams": {
+        "version": "0.0.94",
+        "changelog": [
+            "=== 0.0.94 ===",
+            "- Works with Maya 2022+",
+            "- Fixed bugs.",
+            "",
+            "=== 0.0.93 ===",
+            "- Enable/disable HUD.",
+            "- Fixed issues.",
+            "",
+            "=== 0.0.92 ===",
+            "- Settings Saved on Disk.",
+            "- Added more HUDs.",
+            "- Fixed issues.",
+            "- And more...",
+            "",
+            "=== 0.0.91 ===",
+            "- Duplicate camera.",
+            "- Added more HUDs.",
+            "",
+            "=== 0.0.9 ===",
+            "- Dockable Window.",
+            "- Presets Menu.",
+            "",
+            "=== 0.0.8 ===",
+            "- Added HUD Editor.",
+            "",
+            "=== 0.0.7 ===",
+            "- Better organization."
+        ]
+    },
+    "spaceswitch": {
+        "version": "0.0.73",
+        "changelog": [
+            "=== 0.0.73 ===",
+            "- Better handling of Callbacks removing.",
+            "",
+            "=== 0.0.72 ===",
+            "- Works with Maya 2022+.",
+            "",
+            "=== 0.0.71 ===",
+            "- Update UI on frame change.",
+            "",
+            "=== 0.0.7 ===",
+            "- Better organization."
+        ]
+    },
     "cams_free": {
         "version": "0.0.51",
         "changelog": [
@@ -44,38 +92,6 @@
             "- Initial Release"
         ]
     },
-    "cams": {
-        "version": "0.0.94",
-        "changelog": [
-            "=== 0.0.94 ===",
-            "- Works with Maya 2022+",
-            "- Fixed bugs.",
-            "",
-            "=== 0.0.93 ===",
-            "- Enable/disable HUD.",
-            "- Fixed issues.",
-            "",
-            "=== 0.0.92 ===",
-            "- Settings Saved on Disk.",
-            "- Added more HUDs.",
-            "- Fixed issues.",
-            "- And more...",
-            "",
-            "=== 0.0.91 ===",
-            "- Duplicate camera.",
-            "- Added more HUDs.",
-            "",
-            "=== 0.0.9 ===",
-            "- Dockable Window.",
-            "- Presets Menu.",
-            "",
-            "=== 0.0.8 ===",
-            "- Added HUD Editor.",
-            "",
-            "=== 0.0.7 ===",
-            "- Better organization."
-        ]
-    },
     "spaceswitch_pyside2": {
         "version": "0.0.6",
         "changelog": [
@@ -91,19 +107,6 @@
             "",
             "=== 0.0.3 ===",
             "- Initial Release"
-        ]
-    },
-    "spaceswitch": {
-        "version": "0.0.72",
-        "changelog": [
-            "=== 0.0.72 ===",
-            "- Works with Maya 2022+",
-            "",
-            "=== 0.0.71 ===",
-            "- Update UI on frame change.",
-            "",
-            "=== 0.0.7 ===",
-            "- Better organization."
         ]
     }
 }
