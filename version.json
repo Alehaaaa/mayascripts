@@ -32,8 +32,11 @@
         ]
     },
     "spaceswitch": {
-        "version": "0.0.73",
+        "version": "0.0.74",
         "changelog": [
+            "=== 0.0.74 ===",
+            "- Fixed Apply to all frames.",
+            "",
             "=== 0.0.73 ===",
             "- Better handling of Callbacks removing.",
             "",
