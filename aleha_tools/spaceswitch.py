@@ -35,7 +35,7 @@ def get_maya_win():
 class UI(QtWidgets.QDialog):
 
     TITLE = "SpaceSwitch"
-    VERSION = "0.0.73"
+    VERSION = "0.0.74"
     """
     Messages:
     """
@@ -320,13 +320,13 @@ class UI(QtWidgets.QDialog):
     def apply_changes(self):
         sel = self.getSelectedObj()
         too_many_objects = "Too many objects selected!"
+        index = self.combobox.currentIndex()
 
         def do_xform(target, all_xform=False):
             if all_xform:
                 xform = all_xform
             else:
                 xform = cmds.xform(target, q=True, ws=True, matrix=True)
-            index = self.combobox.currentIndex()
             cmds.setAttr(("{}.{}").format(sel[0], self.enum_attr), index)
             cmds.xform(target, ws=True, matrix=xform)
 
