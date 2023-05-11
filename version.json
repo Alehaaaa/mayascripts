@@ -32,8 +32,11 @@
         ]
     },
     "spaceswitch": {
-        "version": "0.0.74",
+        "version": "0.0.75",
         "changelog": [
+            "=== 0.0.75 ===",
+            "- Also get locked attributes.",
+            "",
             "=== 0.0.74 ===",
             "- Fixed Apply to all frames.",
             "",
