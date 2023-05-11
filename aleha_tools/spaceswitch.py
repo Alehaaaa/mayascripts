@@ -33,9 +33,8 @@ def get_maya_win():
 
 
 class UI(QtWidgets.QDialog):
-
     TITLE = "SpaceSwitch"
-    VERSION = "0.0.74"
+    VERSION = "0.0.75"
     """
     Messages:
     """
@@ -52,7 +51,7 @@ class UI(QtWidgets.QDialog):
             cls.dlg_instance.show()
             cls.dlg_instance.refresh()
             cls.dlg_instance.add_callbacks()
-            
+
         else:
             cls.dlg_instance.raise_()
             cls.dlg_instance.activateWindow()
@@ -148,7 +147,8 @@ class UI(QtWidgets.QDialog):
     def add_callbacks(self):
         # Add a callback for the Maya SceneOpened event
         self.sceneOpened = om.MSceneMessage.addCallback(
-            om.MSceneMessage.kAfterOpen, self.on_scene_opened)
+            om.MSceneMessage.kAfterOpen, self.on_scene_opened
+        )
         self.SelectionChanged = om.MEventMessage.addEventCallback(
             "SelectionChanged", self.refresh
         )
@@ -236,13 +236,9 @@ class UI(QtWidgets.QDialog):
     def getEnum(self):
         sel = self.getSelectedObj()[0]
         enum_attributes = []
-        allAttrs = cmds.listAttr(sel)
-        cbAttrs = cmds.listAnimatable(sel)
-        if allAttrs and cbAttrs:
-            orderedAttrs = [
-                attr for attr in allAttrs for cb in cbAttrs if cb.endswith(attr)
-            ]
-            for i in orderedAttrs:
+        allAttrs = cmds.listAttr(sel, cb=1)
+        for i in allAttrs:
+            try:
                 attrType = cmds.attributeQuery(i, node=sel, attributeType=True)
                 if attrType == "enum":
                     enum_values = cmds.attributeQuery(i, node=sel, listEnum=True)[
@@ -251,12 +247,14 @@ class UI(QtWidgets.QDialog):
                     attrs = ["xyz", "xzy", "yxz", "yzx", "zxy", "zyx"]
                     if not any(x in enum_values for x in attrs):
                         enum_attributes.append(i)
+            except:
+                pass
 
-            if enum_attributes:
-                self.apply_btn.setEnabled(True)
-            else:
-                self.apply_btn.setEnabled(False)
-            return enum_attributes
+        if enum_attributes:
+            self.apply_btn.setEnabled(True)
+        else:
+            self.apply_btn.setEnabled(False)
+        return enum_attributes
 
     def select_attr(self):
         sel = self.getSelectedObj()[0]
@@ -467,7 +465,6 @@ class UI(QtWidgets.QDialog):
                 cancelButton="Close",
             )
             if update_available == "Install":
-
                 import aleha_tools.updater as updater
 
                 if get_python_version() < 3:
@@ -476,6 +473,7 @@ class UI(QtWidgets.QDialog):
 
                 else:
                     import imp
+
                     imp.reload(updater)
                     reload_code = "import imp;imp.reload(spaceswitch)"
 
@@ -485,7 +483,7 @@ class UI(QtWidgets.QDialog):
                 self.deleteLater()
                 cmds.evalDeferred(
                     "import aleha_tools.{} as spaceswitch;{};spaceswitch.UI.show_dialog();".format(
-                        script_name,reload_code
+                        script_name, reload_code
                     )
                 )
         else:
@@ -503,7 +501,7 @@ class UI(QtWidgets.QDialog):
         aleha_credits.setWindowTitle("Buy me a coffee!")
         aleha_credits.setText(
             'Created by @Aleha - <a href=https://www.instagram.com/alejandro_anim><font color="white">Instagram</a><br>My website - <a href=https://alehaaaa.github.io><font color="white">alehaaaa.github.io</a><br><br>If you liked this set of tools,<br>you can send me some love!'
-            )
+        )
         aleha_credits.setFixedSize(400, 300)
         aleha_credits.exec_()
 
@@ -525,11 +523,9 @@ class UI(QtWidgets.QDialog):
         except:
             print("Error removing timeChanged Callback")
 
-
     def closeEvent(self, event):
         self.remove_callbacks()
         event.accept()
-
 
 
 if __name__ == "__main__":
