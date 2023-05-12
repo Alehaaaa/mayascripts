@@ -32,8 +32,13 @@
         ]
     },
     "spaceswitch": {
-        "version": "0.0.75",
+        "version": "0.0.8",
         "changelog": [
+            "=== 0.0.8 ===",
+            "- Hotfix for attribute detection.",
+            "- Attribute selection in dropdown.",
+            "- Enable Rotation Order switching.",
+            "",
             "=== 0.0.75 ===",
             "- Also get locked attributes.",
             "",

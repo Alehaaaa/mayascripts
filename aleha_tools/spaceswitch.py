@@ -34,7 +34,7 @@ def get_maya_win():
 
 class UI(QtWidgets.QDialog):
     TITLE = "SpaceSwitch"
-    VERSION = "0.0.75"
+    VERSION = "0.0.8"
     """
     Messages:
     """
@@ -60,7 +60,8 @@ class UI(QtWidgets.QDialog):
 
     def __init__(self, parent=get_maya_win()):
         super(UI, self).__init__(parent=parent)
-        self.namespaces = True
+        self.namespaces = False
+        self.r_order = False
         self.setWindowTitle(("{} {}").format(UI.TITLE, UI.VERSION))
         self.setWindowFlags(self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint)
         self.setFixedWidth(220)
@@ -77,9 +78,14 @@ class UI(QtWidgets.QDialog):
         # Menu bar
         menu_bar = QtWidgets.QMenuBar()
         settings_menu = menu_bar.addMenu("Settings")
-        self.toggle_namespaces = settings_menu.addAction("Hide namespaces")
+        self.toggle_namespaces = settings_menu.addAction("Show namespaces")
         self.toggle_namespaces.setCheckable(True)
         self.toggle_namespaces.setChecked(self.namespaces)
+
+        self.rotate_order = settings_menu.addAction("Enable Rotate Order")
+        self.rotate_order.setCheckable(True)
+        self.rotate_order.setChecked(self.r_order)
+
         settings_menu.addSeparator()
         self.all_frames = settings_menu.addAction("Apply to all frames")
         self.all_frames.setCheckable(True)
@@ -136,6 +142,7 @@ class UI(QtWidgets.QDialog):
 
     def create_connections(self):
         self.toggle_namespaces.triggered.connect(self.set_namespaces)
+        self.rotate_order.triggered.connect(self.set_rotate)
         self.target_fold.clicked.connect(
             lambda: self.show_hide_target(button_triggered=True)
         )
@@ -160,95 +167,108 @@ class UI(QtWidgets.QDialog):
         self.namespaces = self.toggle_namespaces.isChecked()
         self.refresh()
 
+    def set_rotate(self):
+        self.r_order = self.rotate_order.isChecked()
+        self.refresh()
+
     def getSelectedObj(self):
         return cmds.ls(selection=True)
 
     def refresh(self, *args):
-        self.enum_attr = ""
-        sel = self.getSelectedObj()
-        no_selection = "No selection."
-        no_target = "No target object selected."
-        if len(sel) != 0:
-            if ":" in sel[0]:
-                if self.namespaces:
-                    name = "...:%s" % sel[0].split(":")[1]
-                    self.selection.setText(name)
-                    self.selection.setAlignment(
-                        QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
-                    )
-                else:
-                    self.selection.setText(sel[0])
-                    self.selection.setAlignment(
-                        QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
-                    )
-            else:
-                self.selection.setText(sel[0])
-                self.selection.setAlignment(
-                    QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
-                )
-            self.attribute_btn.hide()
-            if len(self.getEnum()) > 0:
-                self.apply_btn.setEnabled(True)
-                self.combobox.setEnabled(True)
-                self.combobox.clear()
-                if len(self.getEnum()) == 1:
-                    self.set_combobox(sel[0], self.getEnum()[0])
-                elif len(self.getEnum()) > 1:
-                    self.attribute_btn.show()
-            else:
-                self.apply_btn.setEnabled(False)
-                self.combobox.setEnabled(False)
-                self.combobox.clear()
-            if len(sel) == 1:
-                self.selected_target.setText(no_target)
-                self.selected_target.setAlignment(
-                    QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
-                )
-            else:
-                self.show_hide_target()
-                if ":" in sel[1]:
-                    if self.namespaces:
-                        name = "...:%s" % sel[1].split(":")[1]
-                        self.selected_target.setText(name)
-                        self.selected_target.setAlignment(
+        try:
+            self.enum_attr = ""
+            sel = self.getSelectedObj()
+            no_selection = "No selection."
+            no_target = "No target object selected."
+            if len(sel) != 0:
+                if ":" in sel[0]:
+                    if not self.namespaces:
+                        name = "...:%s" % sel[0].split(":")[1]
+                        self.selection.setText(name)
+                        self.selection.setAlignment(
                             QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
                         )
                     else:
-                        self.selected_target.setText(sel[1])
-                        self.selected_target.setAlignment(
+                        self.selection.setText(sel[0])
+                        self.selection.setAlignment(
                             QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
                         )
                 else:
-                    self.selected_target.setText(sel[1])
+                    self.selection.setText(sel[0])
+                    self.selection.setAlignment(
+                        QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
+                    )
+                self.attribute_btn.hide()
+                if len(self.getEnum()) > 0:
+                    self.apply_btn.setEnabled(True)
+                    self.combobox.setEnabled(True)
+                    self.combobox.clear()
+                    if len(self.getEnum()) == 1:
+                        self.set_combobox(sel[0], self.getEnum()[0])
+                    elif len(self.getEnum()) > 1:
+                        self.attribute_btn.show()
+                        self.combobox.addItems(self.getEnum())
+                        cmds.inViewMessage( amg='Choose the attribute to use from the <hl>dropdown menu</hl>.', pos='midCenterBot', fade=True )
+                else:
+                    self.apply_btn.setEnabled(False)
+                    self.combobox.setEnabled(False)
+                    self.combobox.clear()
+                if len(sel) == 1:
+                    self.selected_target.setText(no_target)
                     self.selected_target.setAlignment(
                         QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
                     )
-            return
-        self.attribute_btn.hide()
-        self.selection.setText(no_selection)
-        self.selected_target.setText(no_target)
-        self.selection.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        self.selected_target.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        self.apply_btn.setEnabled(False)
-        self.combobox.clear()
-        self.combobox.setEnabled(False)
+                else:
+                    self.show_hide_target()
+                    if ":" in sel[1]:
+                        if not self.namespaces:
+                            name = "...:%s" % sel[1].split(":")[1]
+                            self.selected_target.setText(name)
+                            self.selected_target.setAlignment(
+                                QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
+                            )
+                        else:
+                            self.selected_target.setText(sel[1])
+                            self.selected_target.setAlignment(
+                                QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                            )
+                    else:
+                        self.selected_target.setText(sel[1])
+                        self.selected_target.setAlignment(
+                            QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
+                        )
+                return
+            self.attribute_btn.hide()
+            self.selection.setText(no_selection)
+            self.selected_target.setText(no_target)
+            self.selection.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+            self.selected_target.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+            self.apply_btn.setEnabled(False)
+            self.combobox.clear()
+            self.combobox.setEnabled(False)
+        except:pass
 
     def getEnum(self):
         sel = self.getSelectedObj()[0]
         enum_attributes = []
-        allAttrs = cmds.listAttr(sel, cb=1)
-        for i in allAttrs:
-            try:
+        allAttrs = cmds.listAttr(sel)
+        cbAttrs = cmds.listAnimatable(sel)
+        locked = cmds.listAttr(sel, cb=1)
+        if allAttrs and cbAttrs:
+            orderedAttrs = {
+                attr for attr in allAttrs for cb in cbAttrs if cb.endswith(attr)
+            }
+            if locked:
+                [orderedAttrs.add(x) for x in locked]
+            for i in orderedAttrs:
                 attrType = cmds.attributeQuery(i, node=sel, attributeType=True)
                 if attrType == "enum":
                     enum_values = cmds.attributeQuery(i, node=sel, listEnum=True)[
                         0
                     ].split(":")
-                    attrs = ["xyz", "xzy", "yxz", "yzx", "zxy", "zyx"]
+                    attrs = [""] if self.r_order else ["xyz", "xzy", "yxz", "yzx", "zxy", "zyx"]
                     if not any(x in enum_values for x in attrs):
                         enum_attributes.append(i)
-            except:
-                pass
 
         if enum_attributes:
             self.apply_btn.setEnabled(True)
@@ -258,21 +278,8 @@ class UI(QtWidgets.QDialog):
 
     def select_attr(self):
         sel = self.getSelectedObj()[0]
-        selected_channelbox = cmds.channelBox("mainChannelBox", q=True, sma=True)
-        attrType = cmds.attributeQuery(
-            selected_channelbox, node=sel, attributeType=True
-        )
-        if selected_channelbox:
-            if not attrType == "enum":
-                cmds.warning("Ensure that the selected attribute is an enum type.")
-                return
-            self.set_combobox(sel, selected_channelbox[0])
-            self.attribute_btn.hide()
-        else:
-            self.attribute_btn.show()
-            cmds.warning(
-                "More than one attribute detected. Please select it manually and hit the 'Set Attribute' button."
-            )
+        self.set_combobox(sel, self.combobox.currentText())
+        self.attribute_btn.hide()
 
     def set_combobox(self, sel, enum_attr):
         self.enum_attr = enum_attr
@@ -508,6 +515,7 @@ class UI(QtWidgets.QDialog):
     def on_scene_opened(self, *args, **kwargs):
         # Close the dialog when a new scene is opened in Maya to avoid callback errors
         self.close()
+        self.remove_callbacks()
 
     def remove_callbacks(self):
         try:
