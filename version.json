@@ -1,7 +1,10 @@
 {
     "cams": {
-        "version": "0.0.94",
+        "version": "0.0.95",
         "changelog": [
+            "=== 0.0.95 ===",
+            "- Better UI Organization.",
+            "",
             "=== 0.0.94 ===",
             "- Works with Maya 2022+",
             "- Fixed bugs.",

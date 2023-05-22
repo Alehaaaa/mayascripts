@@ -47,7 +47,7 @@ def delete_workspace_control(control):
 class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     TITLE = "Cams"
-    VERSION = "0.0.94"
+    VERSION = "0.0.95"
     """
     Messages:
     """
@@ -93,11 +93,11 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
         menu_general = menu_bar.addMenu("General")
         self.reload_btn = menu_general.addAction("Reload UI")
-        self.settings_btn = menu_general.addAction("Camera Defaults")
 
-        menu_tools = menu_bar.addMenu("Tools")
-        self.multicams = menu_tools.addAction("MultiCams")
-        self.add_hud = menu_tools.addAction("HUD Editor")
+        menu_general.addSeparator().setText("Tools")
+
+        self.settings_btn = menu_general.addAction("Camera Defaults")
+        self.multicams = menu_general.addAction("MultiCams")
 
         self.menu_presets = QtWidgets.QMenu("HUD", self)
         self.menu_presets.aboutToShow.connect(lambda: self.add_presets())
@@ -107,10 +107,10 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
         menu_extra = menu_bar.addMenu("Extra")
         self.updates = menu_extra.addAction("Check for updates")
-        menu_extra.addSeparator()
-        self.reset_cams_data = menu_extra.addAction("Reset Default Data")
-        menu_extra.addSeparator()
+        menu_extra.addSeparator().setText("About")
         self.credits = menu_extra.addAction("Credits")
+        menu_extra.addSeparator()
+        self.reset_cams_data = menu_extra.addAction("Reset All Settings")
 
         self.main_layout.setMenuBar(menu_bar)
 
@@ -119,6 +119,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.cameras_layout = QtWidgets.QHBoxLayout()
         self.main_layout.addLayout(self.default_cam_layout)
         self.main_layout.setMargin(self.__margin__)
+        self.main_layout.setContentsMargins(3,3,3,3)
 
     def add_presets(self):
         self.get_prefs()
@@ -137,8 +138,12 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         HUD_checkbox_state = self.HUD_display_cam()
         self.HUD_checkbox.setChecked(HUD_checkbox_state)
         self.HUD_checkbox.triggered.connect(lambda: self.HUD_display_cam(change=True))
-        clear = self.menu_presets.addAction("Clear HUD")
+        clear = self.menu_presets.addAction("Clear HUDs")
         clear.triggered.connect(lambda: self.clear_hud())
+
+        self.menu_presets.addSeparator()
+        self.hud_editor = self.menu_presets.addAction("Edit HUD Templates")
+        self.hud_editor.triggered.connect(lambda: self.run_tools("HUDWindow"))
 
     def create_widgets(self):
 
@@ -195,7 +200,6 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.settings_btn.triggered.connect(lambda: self.settings())
         self.reload_btn.triggered.connect(self.reload)
         self.multicams.triggered.connect(lambda: self.run_tools("multicams", py=False))
-        self.add_hud.triggered.connect(lambda: self.run_tools("HUDWindow"))
 
         self.reset_cams_data.triggered.connect(lambda: self.process_prefs(reset=True))
         self.updates.triggered.connect(self.check_for_updates)
@@ -738,7 +742,20 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             if not reset:
                 self.save_prefs(cam_prefs=self.cams_prefs)
             else:
-                self.save_prefs()
+                box = QtWidgets.QMessageBox()
+                box.setIcon(QtWidgets.QMessageBox.Warning)
+                box.setWindowTitle("About to erase All Settings!")
+                box.setText("Are you sure you want to delete all Camera Defaults Settings?\nThis action is NOT undoable.")
+                box.setStandardButtons(QtWidgets.QMessageBox.Yes|QtWidgets.QMessageBox.No)
+
+                buttonY = box.button(QtWidgets.QMessageBox.Yes)
+                buttonY.setText('Reset')
+                buttonN = box.button(QtWidgets.QMessageBox.No)
+                buttonN.setText('Cancel')
+                box.exec_()
+
+                if box.clickedButton() == buttonY:
+                    self.save_prefs()
 
     def look_thru(self, cam):
         cmds.lookThru(cmds.getPanel(wf=True), cam)
