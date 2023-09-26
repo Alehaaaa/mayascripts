@@ -21,7 +21,7 @@ import random
 class UI:
 
     TITLE = "Cams Free"
-    VERSION = "0.0.51"
+    VERSION = "0.0.52"
     """
     Error Messages:
     """
@@ -59,8 +59,6 @@ class UI:
             )
 
         # Menu bar
-        cmds.menu(label="Tools")
-        cmds.menuItem(label="Reload", command=self.reload)
         cmds.menu(label="About", helpMenu=True)
         cmds.menuItem(label="Check for updates", command=self.check_for_updates)
         cmds.menuItem(divider=True)
@@ -68,7 +66,14 @@ class UI:
 
         # Cameras Layout
         cmds.columnLayout()
-        self.main = cmds.rowLayout(numberOfColumns=4)
+        self.main = cmds.rowLayout(numberOfColumns=5)
+
+        cmds.iconTextButton(
+                style="iconOnly",
+                image="rebuild.png",
+                command=self.reload,
+                annotation="Reload cameras"
+            )
         cmds.separator(w=self.__margin__ / 2, style="none")
         cmds.iconTextButton(
             style="iconAndTextHorizontal",
@@ -80,7 +85,7 @@ class UI:
             command="cmds.lookThru( cmds.getPanel(wf=True), 'persp')",
         )
         self.separator = cmds.separator(
-            w=self.__margin__ * 1.5, height=self.__height__, style="single"
+            w=self.__margin__ * 1.5, height=self.__height__, style="double", horizontal=False
         )
 
         self.create_layouts()
@@ -181,15 +186,19 @@ class UI:
             cmds.separator(self.separator, edit=True, style="single")
 
     def check_for_updates(self, *args):
-        import json, urllib2
-        import maya.OpenMaya as om
+        import maya.OpenMaya as om, json, sys
 
         script_name = "cams_free"
 
         url = "https://raw.githubusercontent.com/Alehaaaa/mayascripts/main/version.json"
 
+        if sys.version_info.major < 3:
+            from urllib2 import urlopen
+        else:
+            from urllib.request import urlopen
+
         try:
-            response = urllib2.urlopen(url)
+            response = urlopen(url, timeout=1)
         except:
             om.MGlobal.displayWarning(UI.NO_INTERNET)
             return

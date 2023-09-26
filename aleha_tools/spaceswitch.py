@@ -34,7 +34,7 @@ def get_maya_win():
 
 class UI(QtWidgets.QDialog):
     TITLE = "SpaceSwitch"
-    VERSION = "0.0.8"
+    VERSION = "0.0.81"
     """
     Messages:
     """
@@ -337,6 +337,7 @@ class UI(QtWidgets.QDialog):
 
         def multiple_frames(keyframes):
             cmds.undoInfo(openChunk=True)
+            self.remove_callbacks()
             try:
                 cmds.refresh(suspend=True)
                 max_bar_value = len(keyframes) * 2
@@ -379,6 +380,7 @@ class UI(QtWidgets.QDialog):
             finally:
                 cmds.refresh(suspend=False)
                 cmds.undoInfo(closeChunk=True)
+                self.add_callbacks()
 
         # Check selection length to determinate the target.
         if len(sel) == 2:
@@ -521,15 +523,15 @@ class UI(QtWidgets.QDialog):
         try:
             om.MSceneMessage.removeCallback(self.sceneOpened)
         except:
-            print("Error removing sceneOpened Callback")
+            pass
         try:
             om.MMessage.removeCallback(self.SelectionChanged)
         except:
-            print("Error removing SelectionChanged Callback")
+            pass
         try:
             om.MMessage.removeCallback(self.timeChanged)
         except:
-            print("Error removing timeChanged Callback")
+            pass
 
     def closeEvent(self, event):
         self.remove_callbacks()

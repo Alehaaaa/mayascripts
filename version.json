@@ -35,8 +35,11 @@
         ]
     },
     "spaceswitch": {
-        "version": "0.0.8",
+        "version": "0.0.81",
         "changelog": [
+            "=== 0.0.81 ===",
+            "- Fixed switching for multiple frames.",
+            "",
             "=== 0.0.8 ===",
             "- Hotfix for attribute detection.",
             "- Attribute selection in dropdown.",
@@ -62,8 +65,12 @@
         ]
     },
     "cams_free": {
-        "version": "0.0.51",
+        "version": "0.0.52",
         "changelog": [
+            "=== 0.0.52 ===",
+            "- UI improvements.",
+            "- Now works with Maya 2024.",
+            "",
             "=== 0.0.51 ===",
             "- Minor improvements.",
             "",
