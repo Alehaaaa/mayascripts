@@ -35,8 +35,12 @@
         ]
     },
     "spaceswitch": {
-        "version": "0.0.81",
+        "version": "0.0.9",
         "changelog": [
+            "=== 0.0.9 ===",
+            "- Better way to find switch attributes.",
+            "- Fixed some stuff behind the hood.",
+            "",
             "=== 0.0.81 ===",
             "- Fixed switching for multiple frames.",
             "",
