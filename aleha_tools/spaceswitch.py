@@ -34,7 +34,7 @@ def get_maya_win():
 
 class UI(QtWidgets.QDialog):
     TITLE = "SpaceSwitch"
-    VERSION = "0.0.81"
+    VERSION = "0.0.9"
     """
     Messages:
     """
@@ -251,23 +251,21 @@ class UI(QtWidgets.QDialog):
     def getEnum(self):
         sel = self.getSelectedObj()[0]
         enum_attributes = []
-        allAttrs = cmds.listAttr(sel)
-        cbAttrs = cmds.listAnimatable(sel)
-        locked = cmds.listAttr(sel, cb=1)
-        if allAttrs and cbAttrs:
-            orderedAttrs = {
-                attr for attr in allAttrs for cb in cbAttrs if cb.endswith(attr)
-            }
-            if locked:
-                [orderedAttrs.add(x) for x in locked]
+        locked = cmds.listAttr(sel, cb=1) or []
+        orderedAttrs = [i.rsplit('.', 1)[-1] for i in cmds.listAnimatable(sel) if i not in locked]
+        if orderedAttrs:
+            if self.r_order:
+                orderedAttrs.extend(['rotateOrder'])
             for i in orderedAttrs:
-                attrType = cmds.attributeQuery(i, node=sel, attributeType=True)
+                try:
+                    attrType = cmds.attributeQuery(i, node=sel, attributeType=True)
+                except:
+                    continue
                 if attrType == "enum":
                     enum_values = cmds.attributeQuery(i, node=sel, listEnum=True)[
                         0
                     ].split(":")
-                    attrs = [""] if self.r_order else ["xyz", "xzy", "yxz", "yzx", "zxy", "zyx"]
-                    if not any(x in enum_values for x in attrs):
+                    if any(c.isalnum() for c in enum_values):
                         enum_attributes.append(i)
 
         if enum_attributes:
