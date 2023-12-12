@@ -10,10 +10,13 @@ import aleha_tools.cams as cams
 cams.UI().show(dockable=True)
 
 
+TO-DO:
+    - Re-work HUD
 
 """
 
 import random, os, sys
+from functools import partial
 
 from PySide2 import QtWidgets, QtGui, QtCore
 from shiboken2 import wrapInstance
@@ -47,7 +50,7 @@ def delete_workspace_control(control):
 class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     TITLE = "Cams"
-    VERSION = "0.0.95"
+    VERSION = "0.0.96"
     """
     Messages:
     """
@@ -62,7 +65,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.mayaMainWindow = get_maya_win()
 
         self.__height__ = 25
-        self.__width__ = 75
+        self.__width__ = 6
         self.__margin__ = 6
 
         self.setObjectName(self.__class__.TITLE)
@@ -99,11 +102,11 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.settings_btn = menu_general.addAction("Camera Defaults")
         self.multicams = menu_general.addAction("MultiCams")
 
-        self.menu_presets = QtWidgets.QMenu("HUD", self)
+        '''self.menu_presets = QtWidgets.QMenu("HUD", self)
         self.menu_presets.aboutToShow.connect(lambda: self.add_presets())
         menu_bar.addMenu(self.menu_presets)
 
-        self.add_presets()
+        self.add_presets()'''
 
         menu_extra = menu_bar.addMenu("Extra")
         self.updates = menu_extra.addAction("Check for updates")
@@ -176,7 +179,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             layout = QtWidgets.QHBoxLayout()
 
             layout.setSpacing(1)
-            button = self.create_icon_button(["...%s" % c[-6:] if len(c) > 8 else c][0])
+            button = self.create_icon_button(c)
             layout.addWidget(button)
             # layout.addWidget(delete)
             self.cameras_layout.addLayout(layout)
@@ -188,13 +191,13 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             )
 
             # Connections for buttons
-            button.clicked.connect(lambda c=c: self.look_thru(c))
+            button.clicked.connect(partial(self.look_thru, c))
             # delete.clicked.connect(lambda button=button: self.delete_cam(button.text()))
 
     def create_connections(self):
 
         self.default_cam_btn.clicked.connect(
-            lambda: self.look_thru(self.default_cam[0])
+            partial(self.look_thru, self.default_cam[0])
         )
 
         self.settings_btn.triggered.connect(lambda: self.settings())
@@ -209,15 +212,15 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
         menu = QtWidgets.QMenu()
 
-        select_action = menu.addAction("Select")
-        select_action.triggered.connect(lambda cam=cam: self.select_cam(cam))
+        select_action = menu.addAction(QtGui.QIcon(":selectObject.png"), "Select")
+        select_action.triggered.connect(partial(self.select_cam, cam))
 
-        duplicate_action = menu.addAction("Duplicate")
-        duplicate_action.triggered.connect(lambda cam=cam: self.duplicate_cam(cam))
+        duplicate_action = menu.addAction(QtGui.QIcon(":copySkinWeight.png"), "Duplicate")
+        duplicate_action.triggered.connect(partial(self.duplicate_cam, cam))
 
         if cam != self.default_cam[0]:
-            rename_action = menu.addAction("Rename")
-            rename_action.triggered.connect(lambda cam=cam: self.rename_cam(cam))
+            rename_action = menu.addAction(QtGui.QIcon(":textBeam.png"), "Rename")
+            rename_action.triggered.connect(partial(self.rename_cam, cam))
 
         menu.addSeparator()
 
@@ -227,24 +230,24 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             cmds.getAttr("{}.displayResolution".format(cam))
         )
         self.resolution_checkbox.triggered.connect(
-            lambda cam=cam: self.resolution_cam(cam)
+            partial(self.resolution_cam, cam)
         )
 
-        options_action = menu.addAction("Options")
-        options_action.triggered.connect(lambda cam=cam: Options.show_dialog(cam))
+        options_action = menu.addAction(QtGui.QIcon(":QR_settings.png"), "Options")
+        options_action.triggered.connect(partial(Options.show_dialog, cam))
 
         menu.addSeparator()
         tear_off_copy = menu.addAction("Tear Off Copy")
-        tear_off_copy.triggered.connect(lambda cam=cam: self.tear_off_cam(cam))
+        tear_off_copy.triggered.connect(partial(self.tear_off_cam, cam))
         apply_camera_default = menu.addAction("Apply Camera Defaults")
         apply_camera_default.triggered.connect(
-            lambda cam=cam: self.apply_camera_default(cam)
+            partial(self.apply_camera_default, cam)
         )
 
         if cam != self.default_cam[0]:
             menu.addSeparator()
-            delete_action = menu.addAction("Delete")
-            delete_action.triggered.connect(lambda cam=cam: self.delete_cam(cam))
+            delete_action = menu.addAction(QtGui.QIcon(":trash.png"), "Delete")
+            delete_action.triggered.connect(partial(self.delete_cam, cam))
 
         menu.exec_(button.mapToGlobal(pos))
 
@@ -618,6 +621,9 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             self.process_prefs(cam, near, far, overscan, mask_op, mask_color)
             if self.default_cam[1]:
                 self.default_cam_btn.setText(self.default_cam[0])
+                self.default_cam_btn.clicked.connect(
+                    partial(self.look_thru, self.default_cam[0])
+                )
             self.settings_window.close()
 
         self.settings_window.show()
@@ -697,18 +703,18 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
         if cmds.objExists(self.old_Node):
             old_Value = cmds.getAttr(self.old_Node + ".data")
-            settings = eval(old_Value)
+            old_settings = eval(old_Value)
             # Convert old transformNode
             for i in self.initial_settings():
                 if i == "skip_update":
                     continue
-                value = settings[i]
+                value = old_settings[i]
                 if type(value) != tuple:
-                    settings[i] = (value, True)
+                    old_settings[i] = (value, True)
                 else:
                     break
 
-            self.save_prefs(cam_prefs=settings)
+            self.save_prefs(cam_prefs=old_settings)
 
             cmds.delete(self.old_Node)
 
@@ -856,7 +862,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     def delete_cam(self, cam):
         delete = QtWidgets.QMessageBox()
-        response = delete.question(
+        response = delete.warning(
             None,
             "Delete {}".format(cam),
             "Are you sure you want to delete {}?".format(cam),
@@ -929,15 +935,23 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         )
         return self.non_startup_cameras
 
-    def create_icon_button(self, text):
-        button = QtWidgets.QPushButton(text)
+    def create_icon_button(self, camera):
+        if len(camera) > 9:
+            camera = camera[-8:]
+            btn_name = '..' + camera
+            btn_wdth = self.__width__*(len(camera)) + 34
+        else:
+            btn_name = camera
+            btn_wdth = self.__width__*(len(camera)) + 30
+
+        button = QtWidgets.QPushButton(btn_name)
         button.setIcon(QtGui.QIcon(":Camera.png"))
         button.setStyleSheet(
             "color: rgb(0, 0, 0);background-color: rgb({})".format(
                 ",".join(self.getcolor())
             )
         )
-        button.setFixedSize(self.__width__, self.__height__)
+        button.setFixedSize(btn_wdth, self.__height__)
         return button
 
     def getcolor(self):
@@ -1057,16 +1071,18 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                 self.process_prefs(skip_update=1)
         else:
             if warning:
-                om.MGlobal.displayWarning("All up-to-date.")
+                cmds.inViewMessage( amg=f'You have the latest version <hl>{version}</hl>', pos='midCenter', fade=True )
 
     def coffee(self):
 
         import base64
 
         aleha_credits = QtWidgets.QMessageBox()
-
         base64Data = "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"
-        image_64_decode = base64.decodestring(base64Data)
+        if get_python_version() < 3:
+            image_64_decode = base64.decodestring(base64Data)
+        else:
+            image_64_decode = base64.decodebytes(base64Data.encode('utf-8'))
         image = QtGui.QImage()
         image.loadFromData(image_64_decode, "JPG")
         pixmap = QtGui.QPixmap(image).scaledToHeight(56, QtCore.Qt.SmoothTransformation)
@@ -1242,14 +1258,14 @@ class Options(QtWidgets.QDialog):
 
         for widget in all_widgets:
             widget.returnPressed.connect(
-                lambda cam=self.cam: self.apply_modifications(cam, close=True)
+                partial(self.apply_modifications, self.cam, close=True)
             )
 
         self.ok_btn.clicked.connect(
-            lambda cam=self.cam: self.apply_modifications(cam, close=True)
+            partial(self.apply_modifications, self.cam, close=True)
         )
         self.apply_btn.clicked.connect(
-            lambda cam=self.cam: self.apply_modifications(cam)
+            partial(self.apply_modifications, self.cam)
         )
         self.cancel_btn.clicked.connect(self.close)
 
@@ -1284,28 +1300,30 @@ class Options(QtWidgets.QDialog):
     """
 
     def apply_modifications(self, cam, close=False):
-        self.get_picker_color()
-        parameters = {
-            "fl": self.focal_length_value.text(),
-            "overscan": self.overscan_value.text(),
-            "ncp": self.near_clip_plane.text(),
-            "fcp": self.far_clip_plane.text(),
-            "displayGateMaskOpacity": self.gate_mask_opacity_value.text(),
-            "displayGateMaskColor": "rgbf",
-        }
+        cmds.undoInfo(chunkName='applyCamOptions', openChunk=True)
+        try:
 
-        for i, v in parameters.items():
-            try:
-                if v != "rgbf":
+            self.get_picker_color()
+            parameters = {
+                "fl": self.focal_length_value.text(),
+                "overscan": self.overscan_value.text(),
+                "ncp": self.near_clip_plane.text(),
+                "fcp": self.far_clip_plane.text(),
+                "displayGateMaskOpacity": self.gate_mask_opacity_value.text(),
+                "displayGateMaskColor": self.gate_mask_color_rgbf,
+            }
+            
+            for i, v in parameters.items():
+                if type(v) != list:
                     cmds.setAttr("{}.{}".format(cam, i), float(v))
                 else:
-                    r, g, b = self.gate_mask_color_rgbf
+                    r, g, b = v
                     cmds.setAttr("{}.{}".format(cam, i), r, g, b, type="double3")
-            except:
-                pass
 
-        if close:
-            self.close()
+            if close:
+                self.close()
+        finally:
+            cmds.undoInfo(closeChunk=True)
 
     def get_float(self, value):
         return "{:.3f}".format(value / 1000.0)
