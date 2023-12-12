@@ -1,7 +1,12 @@
 {
     "cams": {
-        "version": "0.0.95",
+        "version": "0.0.96",
         "changelog": [
+            "=== 0.0.96 ===",
+            "- Works up-to Maya 2024.",
+            "- WIP HUD options.",
+            "- More icons.",
+            "",
             "=== 0.0.95 ===",
             "- Better UI Organization.",
             "",
