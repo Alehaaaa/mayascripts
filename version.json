@@ -1,7 +1,12 @@
 {
     "cams": {
-        "version": "0.0.96",
+        "version": "0.0.97",
         "changelog": [
+            "=== 0.0.97 ===",
+            "- Detect camera changes.",
+            "- Update UI on scene open.",
+            "- Better handling of stuff.",
+            "",
             "=== 0.0.96 ===",
             "- Works up-to Maya 2024.",
             "- WIP HUD options.",
