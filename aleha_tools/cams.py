@@ -50,18 +50,17 @@ def delete_workspace_control(control):
 class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     TITLE = "Cams"
-    VERSION = "0.0.96"
+    VERSION = "0.0.97"
     """
     Messages:
     """
     NO_INTERNET = "Could not establish a connection to the server."
-    WORKING_ON_IT = "Still working on this feature!"
-    NO_WRITE_PERMISSION = "Insufficient write permissions."
 
     def __init__(self, parent=None):
         delete_workspace_control(self.TITLE + "WorkspaceControl")
 
         super(self.__class__, self).__init__(parent=parent)
+        #self.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed )
         self.mayaMainWindow = get_maya_win()
 
         self.__height__ = 25
@@ -81,6 +80,8 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.create_widgets()
         self.create_buttons()
         self.create_connections()
+
+        self.add_scriptJobs()
 
         self.settings_window = None
         self.options = None
@@ -201,7 +202,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         )
 
         self.settings_btn.triggered.connect(lambda: self.settings())
-        self.reload_btn.triggered.connect(self.reload)
+        self.reload_btn.triggered.connect(self.reload_cams_UI)
         self.multicams.triggered.connect(lambda: self.run_tools("multicams", py=False))
 
         self.reset_cams_data.triggered.connect(lambda: self.process_prefs(reset=True))
@@ -255,7 +256,6 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
         # Command for displaying the current frame number (HUD Section 4)
         def HUD_current_frame():
-            # Get current frame and total frame count
             Current = cmds.currentTime(query=True)
             Total = cmds.playbackOptions(query=True, maxTime=True)
             result = "{}/{}".format(int(Current), int(Total))
@@ -431,6 +431,9 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         main_layout = QtWidgets.QFormLayout()
         self.settings_window.setLayout(main_layout)
 
+        description_label = QtWidgets.QLabel("Select the settings you want to save.")
+        description_label.setAlignment(QtCore.Qt.AlignCenter)
+
         camera_select = QtWidgets.QComboBox()
         camera_select.addItems(["persp", "top", "front", "side"])
         camera_select.setCurrentText(self.default_cam[0])
@@ -520,6 +523,8 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             ]
         )
 
+        main_layout.addRow(description_label)
+        main_layout.addRow(QtWidgets.QFrame(frameShape=QtWidgets.QFrame.HLine))
         # Loop through each key-value pair in the dictionary and add it to the layout with a checkbox
         for index, (key, value) in enumerate(layout_dict.items()):
             if index == 1 or index == 3:
@@ -784,7 +789,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         if result == QtWidgets.QDialog.Accepted:
             input = self.rename_window.textValue()
             cmds.rename(cam, input)
-            self.reload()
+            self.reload_cams_UI()
 
     def tear_off_cam(self, cam):
         def getPanelFromCamera(cameraName):
@@ -858,7 +863,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     def duplicate_cam(self, cam):
         cmds.duplicate(cam)
-        self.reload()
+        self.reload_cams_UI()
 
     def delete_cam(self, cam):
         delete = QtWidgets.QMessageBox()
@@ -888,7 +893,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
             # Delete cam
             cmds.delete(cam)
-            self.reload()
+            self.reload_cams_UI()
 
     def clearLayout(self, layout):
         if layout is not None:
@@ -909,30 +914,22 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         except:
             pass
 
-        self.resize(80, self.height())
-        self.adjustSize()
-
-    def reload(self):
+    def reload_cams_UI(self):
         self.clearLayout(self.cameras_layout)
         self.create_buttons()
         if self.get_cameras():
             self.line.show()
         else:
             self.line.hide()
+        self.adjustSize()
 
     def get_cameras(self):
         # Get all custom cameras in scene
-        cameras = [camera for camera in cmds.ls(type=("camera"), l=True)]
-        startup_cameras = [
-            camera.split("|")[-2]
-            for camera in cameras
-            if cmds.camera(
-                cmds.listRelatives(camera, parent=True)[0], startupCamera=True, q=True
-            )
-        ]
-        self.non_startup_cameras = list(
-            set([camera.split("|")[-2] for camera in cameras]) - set(startup_cameras)
-        )
+        self.non_startup_cameras = []
+        for cam in cmds.ls(type=("camera")):
+            if cam not in cmds.ls(ud=1, type='camera'):
+                kcam = cmds.listRelatives(cam, type='transform',p=True)[0]
+                self.non_startup_cameras.append(kcam)
         return self.non_startup_cameras
 
     def create_icon_button(self, camera):
@@ -1107,6 +1104,20 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     def contextMenuEvent(self, event):
         event.ignore()
+    
+    def cameraCreationCallback(self):
+        self.reload_cams_UI()
+        sel = cmds.ls(sl=1)
+        if sel:
+            sel = sel[0]
+            if cmds.nodeType(cmds.listRelatives(sel)) == 'camera':
+                cmds.scriptJob(nodeDeleted=[sel, self.reload_cams_UI], parent=self.__class__.TITLE)
+
+    def add_scriptJobs(self):
+        for cam in self.non_startup_cameras:
+            cmds.scriptJob(nodeDeleted=[cam, self.reload_cams_UI], parent=self.__class__.TITLE)
+        cmds.scriptJob(event=["DagObjectCreated", self.cameraCreationCallback], parent=self.__class__.TITLE)
+        cmds.scriptJob(event=["SceneOpened", self.reload_cams_UI], parent=self.__class__.TITLE)
 
 
 """
@@ -1145,7 +1156,7 @@ class Options(QtWidgets.QDialog):
         self.create_widgets()
         self.create_connections()
 
-        # self.script_job_id = cmds.scriptJob(event=["Undo", self.reload])
+        # self.script_job_id = cmds.scriptJob(event=["Undo", self.reload_cams_UI])
 
     def create_layouts(self):
 
