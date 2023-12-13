@@ -45,8 +45,12 @@
         ]
     },
     "spaceswitch": {
-        "version": "0.0.9",
+        "version": "0.0.91",
         "changelog": [
+            "=== 0.0.91 ===",
+            "- Colors?!",
+            "- Updated some old code.",
+            "",
             "=== 0.0.9 ===",
             "- Better way to find switch attributes.",
             "- Fixed some stuff behind the hood.",
