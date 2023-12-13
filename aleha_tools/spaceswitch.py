@@ -16,7 +16,8 @@ spaceswitch.UI.show_dialog()
 
 from PySide2 import QtWidgets, QtGui, QtCore
 from shiboken2 import wrapInstance
-import maya.OpenMayaUI as omui, maya.OpenMaya as om, maya.cmds as cmds, maya.mel as mel, base64, sys
+import maya.OpenMayaUI as omui, maya.OpenMaya as om, maya.cmds as cmds, maya.mel as mel
+import base64, sys, colorsys, random
 
 
 def get_python_version():
@@ -34,7 +35,7 @@ def get_maya_win():
 
 class UI(QtWidgets.QDialog):
     TITLE = "SpaceSwitch"
-    VERSION = "0.0.9"
+    VERSION = "0.0.91"
     """
     Messages:
     """
@@ -50,22 +51,25 @@ class UI(QtWidgets.QDialog):
         if cls.dlg_instance.isHidden():
             cls.dlg_instance.show()
             cls.dlg_instance.refresh()
-            cls.dlg_instance.add_callbacks()
+            cls.dlg_instance.add_scriptJobs()
 
         else:
             cls.dlg_instance.raise_()
             cls.dlg_instance.activateWindow()
             cls.dlg_instance.refresh()
-            cls.dlg_instance.add_callbacks()
+            cls.dlg_instance.add_scriptJobs()
 
-    def __init__(self, parent=get_maya_win()):
-        super(UI, self).__init__(parent=parent)
-        self.namespaces = False
-        self.r_order = False
+    def __init__(self, parent=None):
+        super(UI, self).__init__(parent=get_maya_win())
         self.setWindowTitle(("{} {}").format(UI.TITLE, UI.VERSION))
         self.setWindowFlags(self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint)
+
         self.setFixedWidth(220)
         self.setMaximumHeight(self.height())
+
+        self.namespaces = False
+        self.r_order = False
+
         self.create_layouts()
         self.create_widgets()
         self.create_connections()
@@ -151,8 +155,8 @@ class UI(QtWidgets.QDialog):
         self.updates.triggered.connect(self.check_for_updates)
         self.credits.triggered.connect(self.coffee)
 
-    def add_callbacks(self):
-        # Add a callback for the Maya SceneOpened event
+    def add_scriptJobs(self):
+        '''# Add a callback for the Maya SceneOpened event 
         self.sceneOpened = om.MSceneMessage.addCallback(
             om.MSceneMessage.kAfterOpen, self.on_scene_opened
         )
@@ -161,7 +165,12 @@ class UI(QtWidgets.QDialog):
         )
         self.timeChanged = om.MEventMessage.addEventCallback(
             "timeChanged", self.refresh
-        )
+        )'''
+
+        self.sceneOpened = cmds.scriptJob( e = ["NewSceneOpened", self.on_scene_opened] )
+        self.SelectionChanged = cmds.scriptJob( e = ["SelectionChanged", self.refresh] )
+        self.timeChanged = cmds.scriptJob( e = ["timeChanged", self.refresh] )
+
 
     def set_namespaces(self):
         self.namespaces = self.toggle_namespaces.isChecked()
@@ -208,7 +217,12 @@ class UI(QtWidgets.QDialog):
                     elif len(self.getEnum()) > 1:
                         self.attribute_btn.show()
                         self.combobox.addItems(self.getEnum())
-                        cmds.inViewMessage( amg='Choose the attribute to use from the <hl>dropdown menu</hl>.', pos='midCenterBot', fade=True )
+                        self.apply_btn.setEnabled(False)
+                        cmds.inViewMessage(
+                            amg="Choose the attribute to use from the <hl>dropdown menu</hl>.",
+                            pos="midCenterBot",
+                            fade=True,
+                        )
                 else:
                     self.apply_btn.setEnabled(False)
                     self.combobox.setEnabled(False)
@@ -242,20 +256,25 @@ class UI(QtWidgets.QDialog):
             self.selection.setText(no_selection)
             self.selected_target.setText(no_target)
             self.selection.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-            self.selected_target.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+            self.selected_target.setAlignment(
+                QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
+            )
             self.apply_btn.setEnabled(False)
             self.combobox.clear()
             self.combobox.setEnabled(False)
-        except:pass
+        except:
+            pass
 
     def getEnum(self):
         sel = self.getSelectedObj()[0]
         enum_attributes = []
         locked = cmds.listAttr(sel, cb=1) or []
-        orderedAttrs = [i.rsplit('.', 1)[-1] for i in cmds.listAnimatable(sel) if i not in locked]
+        orderedAttrs = [
+            i.rsplit(".", 1)[-1] for i in cmds.listAnimatable(sel) if i not in locked
+        ]
         if orderedAttrs:
             if self.r_order:
-                orderedAttrs.extend(['rotateOrder'])
+                orderedAttrs.extend(["rotateOrder"])
             for i in orderedAttrs:
                 try:
                     attrType = cmds.attributeQuery(i, node=sel, attributeType=True)
@@ -278,6 +297,7 @@ class UI(QtWidgets.QDialog):
         sel = self.getSelectedObj()[0]
         self.set_combobox(sel, self.combobox.currentText())
         self.attribute_btn.hide()
+        self.apply_btn.setEnabled(True)
 
     def set_combobox(self, sel, enum_attr):
         self.enum_attr = enum_attr
@@ -335,18 +355,21 @@ class UI(QtWidgets.QDialog):
 
         def multiple_frames(keyframes):
             cmds.undoInfo(openChunk=True)
-            self.remove_callbacks()
+            _h, _s, _v = cmds.displayRGBColor("timeControlBackground", q=1)
+            h, s, v = colorsys.hsv_to_rgb(
+                random.random(), 0.2604166666802246, 0.37647058823
+            )
+            self.remove_scriptJobs()
+
             try:
                 cmds.refresh(suspend=True)
-                max_bar_value = len(keyframes) * 2
-                bar_value = 1
+                cmds.displayRGBColor("timeControlBackground", h, s, v)
                 gMainProgressBar = mel.eval("$tmp = $gMainProgressBar")
-                cmds.progressBar(
-                    gMainProgressBar,
-                    edit=True,
-                    beginProgress=True,
-                    maxValue=max_bar_value,
-                )
+
+                bar_value = 1
+                max_bar_value = len(keyframes)
+                cmds.progressBar(gMainProgressBar, e=True, bp=True, max=max_bar_value)
+
                 list_xform = []
                 current_time = cmds.currentTime(q=True)
                 for frame in keyframes:
@@ -360,7 +383,8 @@ class UI(QtWidgets.QDialog):
                         step=1,
                     )
                     bar_value += 1
-
+                cmds.progressBar(gMainProgressBar, e=True, ep=True)
+                cmds.progressBar(gMainProgressBar, e=True, bp=True, max=max_bar_value)
                 for i, frame in enumerate(keyframes):
                     cmds.currentTime(frame)
                     do_xform(target, list_xform[i])
@@ -374,11 +398,13 @@ class UI(QtWidgets.QDialog):
                     bar_value += 1
 
                 cmds.currentTime(current_time)
-                cmds.progressBar(gMainProgressBar, edit=True, endProgress=True)
+                cmds.progressBar(gMainProgressBar, e=True, ep=True)
             finally:
                 cmds.refresh(suspend=False)
                 cmds.undoInfo(closeChunk=True)
-                self.add_callbacks()
+
+                cmds.displayRGBColor("timeControlBackground", _h, _s, _v)
+                self.add_scriptJobs()
 
         # Check selection length to determinate the target.
         if len(sel) == 2:
@@ -486,7 +512,7 @@ class UI(QtWidgets.QDialog):
 
                 updater.Updater().install(script_name)
 
-                self.remove_callbacks()
+                self.remove_scriptJobs()
                 self.deleteLater()
                 cmds.evalDeferred(
                     "import aleha_tools.{} as spaceswitch;{};spaceswitch.UI.show_dialog();".format(
@@ -515,10 +541,10 @@ class UI(QtWidgets.QDialog):
     def on_scene_opened(self, *args, **kwargs):
         # Close the dialog when a new scene is opened in Maya to avoid callback errors
         self.close()
-        self.remove_callbacks()
+        self.remove_scriptJobs()
 
-    def remove_callbacks(self):
-        try:
+    def remove_scriptJobs(self):
+        '''try:
             om.MSceneMessage.removeCallback(self.sceneOpened)
         except:
             pass
@@ -529,10 +555,22 @@ class UI(QtWidgets.QDialog):
         try:
             om.MMessage.removeCallback(self.timeChanged)
         except:
+            pass'''
+        try:
+            cmds.scriptJob( kill = self.sceneOpened, force=True)
+        except:
+            pass
+        try:
+            cmds.scriptJob( kill = self.SelectionChanged, force=True)
+        except:
+            pass
+        try:
+            cmds.scriptJob( kill = self.timeChanged, force=True)
+        except:
             pass
 
     def closeEvent(self, event):
-        self.remove_callbacks()
+        self.remove_scriptJobs()
         event.accept()
 
 
