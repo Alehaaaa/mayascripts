@@ -45,8 +45,14 @@
         ]
     },
     "spaceswitch": {
-        "version": "0.0.91",
+        "version": "0.0.93",
         "changelog": [
+            "=== 0.0.93 ===",
+            "- Fixed annoying refreshes.",
+            "",
+            "=== 0.0.92 ===",
+            "- Smarter colors.",
+            "",
             "=== 0.0.91 ===",
             "- Colors?!",
             "- Updated some old code.",
