@@ -16,8 +16,9 @@ spaceswitch.UI.show_dialog()
 
 from PySide2 import QtWidgets, QtGui, QtCore
 from shiboken2 import wrapInstance
-import maya.OpenMayaUI as omui, maya.OpenMaya as om, maya.cmds as cmds, maya.mel as mel
-import base64, sys, colorsys, random
+import maya.OpenMayaUI as omui, maya.OpenMaya as om
+import maya.cmds as cmds, maya.mel as mel
+import base64, sys, colorsys, random, shiboken2
 
 
 def get_python_version():
@@ -35,7 +36,7 @@ def get_maya_win():
 
 class UI(QtWidgets.QDialog):
     TITLE = "SpaceSwitch"
-    VERSION = "0.0.91"
+    VERSION = "0.0.92"
     """
     Messages:
     """
@@ -62,7 +63,7 @@ class UI(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super(UI, self).__init__(parent=get_maya_win())
         self.setWindowTitle(("{} {}").format(UI.TITLE, UI.VERSION))
-        self.setWindowFlags(self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint)
+        # self.setWindowFlags(self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint)
 
         self.setFixedWidth(220)
         self.setMaximumHeight(self.height())
@@ -340,6 +341,7 @@ class UI(QtWidgets.QDialog):
         else:
             self.target_fold.setIcon(QtGui.QIcon(":arrowDown.png"))
 
+
     def apply_changes(self):
         sel = self.getSelectedObj()
         too_many_objects = "Too many objects selected!"
@@ -354,18 +356,28 @@ class UI(QtWidgets.QDialog):
             cmds.xform(target, ws=True, matrix=xform)
 
         def multiple_frames(keyframes):
+            marker_widget = None
             cmds.undoInfo(openChunk=True)
-            _h, _s, _v = cmds.displayRGBColor("timeControlBackground", q=1)
-            h, s, v = colorsys.hsv_to_rgb(
-                random.random(), 0.2604166666802246, 0.37647058823
-            )
             self.remove_scriptJobs()
 
             try:
                 cmds.refresh(suspend=True)
-                cmds.displayRGBColor("timeControlBackground", h, s, v)
-                gMainProgressBar = mel.eval("$tmp = $gMainProgressBar")
 
+                # Color timeline
+                timerange = [keyframes[0], keyframes[-1] +1]
+                if cmds.timeControl("timeControl1", q=1, rv=1):
+                    timerange = [int(f) for f in cmds.timeControl("timeControl1", ra=1, q=True)]
+
+                if int(cmds.about(v=1)) >= 2024:
+                    cmds.playbackOptions( sv=False )
+
+                timeline_wgt = TimelineMarker().get_timeline()
+                marker_widget = TimelineMarker(timerange, parent=timeline_wgt)
+                marker_widget.setGeometry(timeline_wgt.rect())
+                marker_widget.show()
+                
+                # Start Progress Bar
+                gMainProgressBar = mel.eval("$tmp = $gMainProgressBar")
                 bar_value = 1
                 max_bar_value = len(keyframes)
                 cmds.progressBar(gMainProgressBar, e=True, bp=True, max=max_bar_value)
@@ -383,6 +395,7 @@ class UI(QtWidgets.QDialog):
                         step=1,
                     )
                     bar_value += 1
+                bar_value = 1
                 cmds.progressBar(gMainProgressBar, e=True, ep=True)
                 cmds.progressBar(gMainProgressBar, e=True, bp=True, max=max_bar_value)
                 for i, frame in enumerate(keyframes):
@@ -402,9 +415,11 @@ class UI(QtWidgets.QDialog):
             finally:
                 cmds.refresh(suspend=False)
                 cmds.undoInfo(closeChunk=True)
-
-                cmds.displayRGBColor("timeControlBackground", _h, _s, _v)
                 self.add_scriptJobs()
+                
+            if marker_widget:
+                marker_widget.delete_marker()
+                marker_widget = None
 
         # Check selection length to determinate the target.
         if len(sel) == 2:
@@ -572,6 +587,49 @@ class UI(QtWidgets.QDialog):
     def closeEvent(self, event):
         self.remove_scriptJobs()
         event.accept()
+
+
+class TimelineMarker(QtWidgets.QWidget):
+    def __init__(self, timerange=None, parent=None):
+        super(TimelineMarker, self).__init__(parent)
+        self.timerange = timerange
+
+    @staticmethod
+    def get_timeline():
+        tline = mel.eval("$tmpVar=$gPlayBackSlider")
+        ptr = omui.MQtUtil.findControl(tline) or omui.MQtUtil.findLayout(tline) or omui.MQtUtil.findMenuItem(tline)
+        if ptr:
+            return shiboken2.wrapInstance(int(ptr), QtWidgets.QWidget)
+
+    def paintEvent(self, event):
+
+        start = cmds.playbackOptions(q=True, minTime=True)
+        end = cmds.playbackOptions(q=True, maxTime=True)
+
+        total_width = self.width()
+        step = (total_width - (total_width * 0.01)) / (end - start + 1)
+        painter = QtGui.QPainter(self)
+        pen = QtGui.QPen()
+        pen.setWidth(step + step * 0.005)
+
+        sframe, eframe = self.timerange
+        eframe -= 1
+
+        color_ = QtGui.QColor(200, 120, 200, 70)
+        pen.setColor(color_)
+        pos_start = (sframe - start) * step + (total_width * 0.005)
+        pos_end = (eframe + 1 - start) * step + (total_width * 0.005)
+        rect = QtCore.QRectF(QtCore.QPointF(pos_start, 0), QtCore.QPointF(pos_end, self.height()))
+        painter.setPen(pen)
+        painter.fillRect(rect, QtGui.QBrush(color_))  # Fill the rectangle with the color
+
+
+    def delete_marker(self):
+        try:
+            self.setParent(None)
+            QtGui.QPainter(self).end()
+        except:
+            pass
 
 
 if __name__ == "__main__":
