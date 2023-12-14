@@ -1,7 +1,11 @@
 {
     "cams": {
-        "version": "0.0.97",
+        "version": "0.0.98",
         "changelog": [
+            "=== 0.0.98 ===",
+            "- Fixed Tearoff camera.",
+            "- Fixed for Python 2.",
+            "",
             "=== 0.0.97 ===",
             "- Detect camera changes.",
             "- Update UI on scene open.",
