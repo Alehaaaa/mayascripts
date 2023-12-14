@@ -50,7 +50,7 @@ def delete_workspace_control(control):
 class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     TITLE = "Cams"
-    VERSION = "0.0.97"
+    VERSION = "0.0.98"
     """
     Messages:
     """
@@ -791,13 +791,16 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             cmds.rename(cam, input)
             self.reload_cams_UI()
 
-    def tear_off_cam(self, cam):
-        def getPanelFromCamera(cameraName):
-            for panelName in cmds.getPanel(type="modelPanel"):
-                if cmds.modelPanel(panelName, query=True, camera=True) == cameraName:
-                    return panelName
+    def tear_off_cam(self, cam): 
+        for panelName in cmds.getPanel(type="modelPanel"):
+            try:
+                ori_ = cmds.modelPanel(panelName, query=True, camera=True)
+                cmds.lookThru(panelName, cam)
+                mel.eval("tearOffCopyItemCmd modelPanel " + panelName)
+                cmds.lookThru(panelName, ori_)
+                break
+            except:pass
 
-        mel.eval("tearOffCopyItemCmd modelPanel " + getPanelFromCamera(cam))
 
     def apply_camera_default(self, cam):
         parameters = {
@@ -927,8 +930,8 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         # Get all custom cameras in scene
         self.non_startup_cameras = []
         for cam in cmds.ls(type=("camera")):
-            if cam not in cmds.ls(ud=1, type='camera'):
-                kcam = cmds.listRelatives(cam, type='transform',p=True)[0]
+            kcam = cmds.listRelatives(cam, type='transform',p=True)[0]
+            if kcam not in ['persp', 'top', 'front', 'side']:
                 self.non_startup_cameras.append(kcam)
         return self.non_startup_cameras
 
@@ -1068,7 +1071,7 @@ class UI(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                 self.process_prefs(skip_update=1)
         else:
             if warning:
-                cmds.inViewMessage( amg=f'You have the latest version <hl>{version}</hl>', pos='midCenter', fade=True )
+                cmds.inViewMessage( amg='You have the latest version <hl>{}</hl>'.format(version), pos='midCenter', fade=True )
 
     def coffee(self):
 
