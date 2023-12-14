@@ -36,7 +36,7 @@ def get_maya_win():
 
 class UI(QtWidgets.QDialog):
     TITLE = "SpaceSwitch"
-    VERSION = "0.0.92"
+    VERSION = "0.0.93"
     """
     Messages:
     """
@@ -70,6 +70,7 @@ class UI(QtWidgets.QDialog):
 
         self.namespaces = False
         self.r_order = False
+        self.selected_attr = None
 
         self.create_layouts()
         self.create_widgets()
@@ -170,7 +171,7 @@ class UI(QtWidgets.QDialog):
 
         self.sceneOpened = cmds.scriptJob( e = ["NewSceneOpened", self.on_scene_opened] )
         self.SelectionChanged = cmds.scriptJob( e = ["SelectionChanged", self.refresh] )
-        self.timeChanged = cmds.scriptJob( e = ["timeChanged", self.refresh] )
+        self.timeChanged = cmds.scriptJob( e = ["timeChanged", lambda: self.refresh(timeChange = True)] )
 
 
     def set_namespaces(self):
@@ -184,7 +185,7 @@ class UI(QtWidgets.QDialog):
     def getSelectedObj(self):
         return cmds.ls(selection=True)
 
-    def refresh(self, *args):
+    def refresh(self, timeChange = False, *args):
         try:
             self.enum_attr = ""
             sel = self.getSelectedObj()
@@ -216,14 +217,20 @@ class UI(QtWidgets.QDialog):
                     if len(self.getEnum()) == 1:
                         self.set_combobox(sel[0], self.getEnum()[0])
                     elif len(self.getEnum()) > 1:
-                        self.attribute_btn.show()
-                        self.combobox.addItems(self.getEnum())
-                        self.apply_btn.setEnabled(False)
-                        cmds.inViewMessage(
-                            amg="Choose the attribute to use from the <hl>dropdown menu</hl>.",
-                            pos="midCenterBot",
-                            fade=True,
-                        )
+                        if not timeChange:
+                            self.selected_attr = None
+                        if self.selected_attr:
+                            self.set_combobox(sel[0], self.selected_attr)
+                        else:
+                            self.attribute_btn.show()
+                            self.combobox.addItems(self.getEnum())
+                            self.apply_btn.setEnabled(False)
+                            if not timeChange:
+                                cmds.inViewMessage(
+                                    amg="Choose the attribute to use from the <hl>dropdown menu</hl>.",
+                                    pos="midCenterBot",
+                                    fade=True,
+                                )
                 else:
                     self.apply_btn.setEnabled(False)
                     self.combobox.setEnabled(False)
@@ -296,7 +303,8 @@ class UI(QtWidgets.QDialog):
 
     def select_attr(self):
         sel = self.getSelectedObj()[0]
-        self.set_combobox(sel, self.combobox.currentText())
+        self.selected_attr = self.combobox.currentText()
+        self.set_combobox(sel, self.selected_attr)
         self.attribute_btn.hide()
         self.apply_btn.setEnabled(True)
 
